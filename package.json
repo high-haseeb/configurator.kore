@@ -1,0 +1,25 @@
+{
+    "name": "high-haseeb.github.io",
+    "author": "high-haseeb",
+    "description": "personal portfolio website",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite --port 6969",
+        "build": "tsc && vite build",
+        "preview": "vite preview"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.3.1",
+        "tailwindcss": "^4.3.1",
+        "typescript": "~6.0.2",
+        "vite": "^8.0.12"
+    },
+    "dependencies": {
+        "@types/three": "^0.185.0",
+        "gsap": "^3.15.0",
+        "lil-gui": "^0.21.0",
+        "three": "^0.185.0"
+    }
+}

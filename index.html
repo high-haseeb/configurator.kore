@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="author" content="high-haseeb" />
+        <title>Room Configurator</title>
+
+        <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    </head>
+    <body class="w-screen h-screen overflow-hidden flex bg-neutral-100 text-neutral-900 font-[Inter]">
+
+        <a href="https://korearchitects.com" id="navbar" class="absolute top-0 left-0 w-max h-max p-10 text-white z-50">
+            <div id="logo" class="nav-item group tracking-tight font-stretch text-5xl flex relative w-max cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] text-black">
+                <span class="relative inline-block overflow-hidden"><span class="inline-block transition-transform duration-300 ease-out group-hover:-translate-y-full after:content-[attr(data-letter)] after:absolute after:top-full after:left-0 delay-0" data-letter="K">K</span></span>
+                <span class="relative inline-block overflow-hidden"><span class="inline-block transition-transform duration-300 ease-out group-hover:-translate-y-full after:content-[attr(data-letter)] after:absolute after:top-full after:left-0 delay-40" data-letter="O">O</span></span>
+                <span class="relative inline-block overflow-hidden"><span class="inline-block transition-transform duration-300 ease-out group-hover:-translate-y-full after:content-[attr(data-letter)] after:absolute after:top-full after:left-0 delay-80" data-letter="R">R</span></span>
+                <span class="relative inline-block overflow-hidden"><span class="inline-block transition-transform duration-300 ease-out group-hover:-translate-y-full after:content-[attr(data-letter)] after:absolute after:top-full after:left-0 delay-120" data-letter="E">E</span></span>
+
+                <div class="tracking-normal absolute left-0.5 bottom-3 translate-y-full font-helvetica font-normal text-sm text-black/80 font-sans">
+                    Design & Construction
+                </div>
+                <div class="absolute bottom-2 right-0 translate-x-full translate-y-full w-3 h-3 bg-lime-400"></div>
+            </div>
+        </a>
+
+        <div id="loader-screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white text-neutral-900 origin-bottom">
+
+            <a href="https://korearchitects.com" id="preloader-navbar" class="mb-16 text-black z-50">
+                <div id="preloader-logo" class="nav-item group tracking-tight font-stretch text-5xl flex relative w-max cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] text-black">
+                    <span class="relative inline-block overflow-hidden"><span class="inline-block transition-transform duration-300 ease-out group-hover:-translate-y-full after:content-[attr(data-letter)] after:absolute after:top-full after:left-0 delay-0" data-letter="K">K</span></span>
+                    <span class="relative inline-block overflow-hidden"><span class="inline-block transition-transform duration-300 ease-out group-hover:-translate-y-full after:content-[attr(data-letter)] after:absolute after:top-full after:left-0 delay-40" data-letter="O">O</span></span>
+                    <span class="relative inline-block overflow-hidden"><span class="inline-block transition-transform duration-300 ease-out group-hover:-translate-y-full after:content-[attr(data-letter)] after:absolute after:top-full after:left-0 delay-80" data-letter="R">R</span></span>
+                    <span class="relative inline-block overflow-hidden"><span class="inline-block transition-transform duration-300 ease-out group-hover:-translate-y-full after:content-[attr(data-letter)] after:absolute after:top-full after:left-0 delay-120" data-letter="E">E</span></span>
+
+                    <div class="tracking-normal absolute left-0.5 bottom-2 translate-y-full font-helvetica font-normal text-sm text-black/80 font-sans">
+                        Configurator
+                    </div>
+                    <div class="absolute bottom-2 right-0 translate-x-full translate-y-full w-3 h-3 bg-lime-400"></div>
+                </div>
+            </a>
+            <div class="w-64 flex flex-col items-center">
+                <div class="w-full h-1 bg-neutral-200 rounded-full overflow-hidden mb-3">
+                    <div id="loader-bar-fill" class="h-full bg-black transition-all duration-300 ease-out" style="width: 0%;"></div>
+                </div>
+                <span id="loader-text" class="text-sm font-bold tracking-widest uppercase text-neutral-500">0%</span>
+            </div>
+
+        </div>
+
+        <div id="canvas-container" class="flex-1 h-full relative z-0">
+
+            <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 z-10">
+
+                <button id="camera-toggle" class="bg-white/90 backdrop-blur-md px-6 py-3 rounded-full shadow-xl border border-neutral-200 flex items-center gap-2 font-bold text-sm hover:bg-black hover:text-white transition-colors duration-300 group cursor-pointer">
+                    <span class="material-symbols-outlined text-[20px] group-hover:text-white transition-colors">meeting_room</span>
+                    <span id="camera-toggle-text">Enter Interior</span>
+                </button>
+
+                <button id="animation-toggle" class="bg-white/90 backdrop-blur-md px-6 py-3 rounded-full shadow-xl border border-neutral-200 flex items-center gap-2 font-bold text-sm hover:bg-black hover:text-white transition-colors duration-300 group cursor-pointer">
+                    <span id="animation-icon" class="material-symbols-outlined text-[20px] group-hover:text-white transition-colors">pause</span>
+                    <span id="animation-text">Pause Animation</span>
+                </button>
+
+            </div>
+        </div>
+
+        <div class="h-full w-full max-w-md bg-white/90 backdrop-blur-xl shadow-2xl border-l border-neutral-200 flex flex-col z-10">
+
+            <div class="p-8 border-b border-neutral-200 shrink-0">
+                <h1 class="text-sm font-bold tracking-widest text-neutral-400 uppercase mb-2">Total Investment</h1>
+                <div class="text-5xl font-extrabold tracking-tight flex items-baseline">
+                    <span>$</span>
+                    <span id="total-price">15,000</span>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
+
+                <section>
+                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-neutral-400">straighten</span>
+                        Dimensions
+                    </h2>
+                    <div class="space-y-6">
+                        <div>
+                            <div class="flex justify-between text-sm font-semibold mb-2">
+                                <span>Width</span>
+                                <span class="text-neutral-500" id="width-cost">+$0</span>
+                            </div>
+                            <input type="range" id="width-slider" min="0" max="1" step="0.01" value="0" class="w-full accent-black h-1 bg-neutral-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm font-semibold mb-2">
+                                <span>Depth</span>
+                                <span class="text-neutral-500" id="depth-cost">+$0</span>
+                            </div>
+                            <input type="range" id="depth-slider" min="0" max="1" step="0.01" value="0" class="w-full accent-black h-1 bg-neutral-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bg-neutral-50 rounded-xl border border-neutral-200 overflow-hidden">
+                    <button id="lighting-toggle" class="w-full flex items-center justify-between p-4 focus:outline-none hover:bg-neutral-100 transition-colors">
+                        <h2 class="text-lg font-bold flex items-center gap-2 m-0">
+                            <span class="material-symbols-outlined text-neutral-400">lightbulb</span>
+                            Lighting & Environment
+                        </h2>
+                        <span id="lighting-arrow" class="material-symbols-outlined text-neutral-400 transition-transform duration-300">expand_more</span>
+                    </button>
+
+                    <div id="lighting-content" class="hidden px-4 pb-6 pt-2 space-y-6 border-t border-neutral-200">
+
+                        <div>
+                            <div class="flex justify-between text-sm font-semibold mb-2">
+                                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px] text-neutral-400">light_mode</span> Intensity</span>
+                                <span class="text-neutral-500" id="intensity-val">2.5</span>
+                            </div>
+                            <input type="range" id="intensity-slider" min="0" max="10" step="0.1" value="2.5" class="w-full accent-black h-1 bg-neutral-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm font-semibold mb-2">
+                                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px] text-neutral-400">explore</span> Azimuth</span>
+                            </div>
+                            <input type="range" id="azimuth-slider" min="-180" max="180" step="1" value="45" class="w-full accent-black h-1 bg-neutral-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm font-semibold mb-2">
+                                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px] text-neutral-400">height</span> Elevation</span>
+                            </div>
+                            <input type="range" id="elevation-slider" min="5" max="85" step="1" value="30" class="w-full accent-black h-1 bg-neutral-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+
+                        <hr class="border-neutral-200">
+
+                        <div>
+                            <h3 class="text-sm font-bold mb-3 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[18px] text-neutral-400">landscape</span>
+                                Environment (HDRI)
+                            </h3>
+                            <div class="grid grid-cols-2 gap-3" id="hdri-options"></div>
+                        </div>
+
+                    </div>
+                </section>
+
+                <hr class="border-neutral-200">
+
+                <section>
+                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-neutral-400">architecture</span>
+                        Exterior Finish
+                    </h2>
+                    <div class="grid grid-cols-2 gap-3" id="material-options"></div>
+                </section>
+
+                <section>
+                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-neutral-400">roofing</span>
+                        Roof Variant
+                    </h2>
+                    <div class="grid grid-cols-2 gap-3" id="roof-options"></div>
+                </section>
+
+                <section>
+                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-neutral-400">roofing</span>
+                        Pipe Variants
+                    </h2>
+                    <div class="grid grid-cols-2 gap-3" id="pipe-options"></div>
+                </section>
+
+                <section>
+                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-neutral-400">architecture</span>
+                        Pipe Finish
+                    </h2>
+                    <div class="grid grid-cols-2 gap-3" id="pipe-material-options"></div>
+                </section>
+
+                <section>
+                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-neutral-400">door_front</span>
+                        Door Variant
+                    </h2>
+                    <div class="grid grid-cols-2 gap-3" id="door-options"></div>
+                </section>
+
+                <section>
+                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-neutral-400">format_paint</span>
+                        Door Material
+                    </h2>
+                    <div class="grid grid-cols-2 gap-3" id="door-color-options"></div>
+                </section>
+
+            </div>
+        </div>
+
+        <script type="module" src="/src/main.ts"></script>
+    </body>
+</html>
