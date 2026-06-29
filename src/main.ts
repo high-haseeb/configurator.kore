@@ -147,10 +147,10 @@ controls.autoRotate = true;
 // --- HDRI Setup ---
 const rgbeLoader = new RGBELoader();
 const hdriLibrary: Record<string, string> = {
-    'Cobblestone': './src/assets/hdri/cobblestone_parish_road_1k.hdr',
-    'German Town Street': './src/assets/hdri/german_town_street_1k.hdr', 
-    'DockLands': './src/assets/hdri/docklands_02_1k.hdr',
-    'Park': './src/assets/hdri/charolettenbrunn_park_1k.hdr'
+    'Cobblestone': './hdri/cobblestone_parish_road_1k.hdr',
+    'German Town Street': './hdri/german_town_street_1k.hdr', 
+    'DockLands': './hdri/docklands_02_1k.hdr',
+    'Park': './hdri/charolettenbrunn_park_1k.hdr'
 };
 
 function loadEnvironment(hdriName: string) {
@@ -169,21 +169,21 @@ loadEnvironment(state.hdri); // Load initial
 // --- Materials Setup ---
 const textureLoader = new THREE.TextureLoader();
 const materialLibrary: Record<string, any> = {
-    'Cladding': { diffuse: './src/assets/material/exterior_wall_cladding_02_diff_2k.jpg', normal: './src/assets/material/exterior_wall_cladding_02_nor_gl_2k.jpg', arm: './src/assets/material/exterior_wall_cladding_02_arm_2k.jpg', repeat: 1.0 },
-    'Red Brick': { diffuse: './src/assets/material/red_brick_03_diff_2k.jpg', normal: './src/assets/material/red_brick_03_nor_gl_2k.jpg', arm: './src/assets/material/red_brick_03_arm_2k.jpg', repeat: 1.0 },
-    'Red Brick 02': { diffuse: './src/assets/material/red_brick_diff_2k.jpg', normal: './src/assets/material/red_brick_nor_gl_2k.jpg', arm: './src/assets/material/red_brick_arm_2k.jpg', repeat: 1.0 },
-    'White Sand Stone': { diffuse: './src/assets/material/white_sandstone_bricks_03_diff_2k.jpg', normal: './src/assets/material/white_sandstone_bricks_03_nor_gl_2k.jpg', arm: './src/assets/material/white_sandstone_bricks_03_arm_2k.jpg', repeat: 0.8 },
-    'Wood Planks': { diffuse: './src/assets/material/wood_planks_diff_2k.jpg', normal: './src/assets/material/wood_planks_nor_gl_2k.jpg', arm: './src/assets/material/wood_planks_arm_2k.jpg', repeat: 1.0 },
-    'Black Bricks': { diffuse: './src/assets/material/bricks06_basecolor.jpg', normal: './src/assets/material/bricks06_normal_opengl.jpg', arm: './src/assets/material/bricks06_roughness.jpg', repeat: 0.7 },
+    'Cladding': { diffuse: './material/exterior_wall_cladding_02_diff_2k.jpg', normal: './material/exterior_wall_cladding_02_nor_gl_2k.jpg', arm: './material/exterior_wall_cladding_02_arm_2k.jpg', repeat: 1.0 },
+    'Red Brick': { diffuse: './material/red_brick_03_diff_2k.jpg', normal: './material/red_brick_03_nor_gl_2k.jpg', arm: './material/red_brick_03_arm_2k.jpg', repeat: 1.0 },
+    'Red Brick 02': { diffuse: './material/red_brick_diff_2k.jpg', normal: './material/red_brick_nor_gl_2k.jpg', arm: './material/red_brick_arm_2k.jpg', repeat: 1.0 },
+    'White Sand Stone': { diffuse: './material/white_sandstone_bricks_03_diff_2k.jpg', normal: './material/white_sandstone_bricks_03_nor_gl_2k.jpg', arm: './material/white_sandstone_bricks_03_arm_2k.jpg', repeat: 0.8 },
+    'Wood Planks': { diffuse: './material/wood_planks_diff_2k.jpg', normal: './material/wood_planks_nor_gl_2k.jpg', arm: './material/wood_planks_arm_2k.jpg', repeat: 1.0 },
+    'Black Bricks': { diffuse: './material/bricks06_basecolor.jpg', normal: './material/bricks06_normal_opengl.jpg', arm: './material/bricks06_roughness.jpg', repeat: 0.7 },
     'Black Metal': {
-        diffuse: "./src/assets/material/Metal028_1K-JPG_Color.jpg",
-        normal: "./src/assets/material/Metal028_1K-JPG_NormalGL.jpg",
-        arm: "./src/assets/material/Metal028_1K-JPG_Roughness.jpg",
+        diffuse: "./material/Metal028_1K-JPG_Color.jpg",
+        normal: "./material/Metal028_1K-JPG_NormalGL.jpg",
+        arm: "./material/Metal028_1K-JPG_Roughness.jpg",
     },
     'Marble Tiles': {
-        diffuse: "./src/assets/material/Marble tiles 1_BaseColor.jpg",
-        normal: "./src/assets/material/Marble tiles 1_Normal.jpg",
-        arm: "./src/assets/material/Marble tiles 1_Roughness.jpg",
+        diffuse: "./material/Marble tiles 1_BaseColor.jpg",
+        normal: "./material/Marble tiles 1_Normal.jpg",
+        arm: "./material/Marble tiles 1_Roughness.jpg",
     }
 };
 
