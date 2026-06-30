@@ -6,8 +6,8 @@ import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
 // import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 // import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import gsap from "gsap";
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 // import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
@@ -15,24 +15,28 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 const pricing = {
     base: 15000,
     dimensions: { widthMax: 2500, depthMax: 3000 },
-    materials: {
-        'Black Bricks': 0, 'Red Brick': 800, 'Red Brick 02': 850,
-        'White Sand Stone': 1200, 'Wood Planks': 1500, 'Cladding': 2000
+    exterior_finishes: {
+        'Black Bricks': 0,
+        'Red Brick': 800,
+        'Red Brick 02': 850,
+        'White Sand Stone': 1200,
+        'Wood Planks': 1500,
+        'Cladding': 2000,
     },
-    doors: {
+    door_variants: {
         'Door_1': 0,
         'Door_2': 450,
         'Door_3': 600,
         'Door_4': 850,
         'Door_Animated': 2300,
     },
-    finishes: {
+    door_finishes: {
         'Anthracite': 0,
         'White': 0,
         'Oak': 250,
         'Walnut': 300,
     },
-    roofs: {
+    roof_variants: {
         'None': 0,
         'Skylight_Lean_1': 0,
         'Skylight_Lean_2': 800,
@@ -41,13 +45,13 @@ const pricing = {
         'Skylight_Lean_5': 1500,
         'Skylight_Gable_4': 1500,
     },
-    pipeLayout: {
+    pipe_layouts: {
         'None': 0, 
         'Left Only': 150, 
         'Right Only': 150, 
         'Both': 250
     },
-    pipeFinishes: {
+    pipe_finishes: {
         'Black PVC': 0, 
         'Zinc': 100, 
         'White Plastic': 200
@@ -57,18 +61,19 @@ const pricing = {
 const state = {
     width: 0,
     depth: 0,
-    material: 'Black Bricks',
-    doorModel: 'Door_1',
-    doorFinish: 'White',
-    roofVariant: 'None',
     hdri: 'Cobblestone',
     sunIntensity: 2.5,
     sunAzimuth: 45,
     sunElevation: 30,
-    currentTotal: pricing.base,
-    pipeLayout: 'Left Only',
-    pipeFinish: 'Zinc',
     isPlaying: true,
+    current_total: pricing.base,
+
+    exterior_finish: 'Black Bricks',
+    door_finish: 'White',
+    pipe_finish: 'Zinc',
+    door_variant: 'Door_1',
+    roof_variant: 'None',
+    pipe_layout: 'Left Only',
 };
 
 const cameraState = {
@@ -173,65 +178,51 @@ function loadEnvironment(hdriName: string)
 loadEnvironment(state.hdri);
 // ----------------------- 
 
-// Materials ----------------------- 
-const materialLibrary: Record<string, any> = {
+// MaterialsLibrary ----------------------- 
+const TexturesLibrary: Record<string, any> = {
     'Cladding': {
-        diffuse: './material/exterior_wall_cladding_02_diff_2k.jpg',
-        normal:  './material/exterior_wall_cladding_02_nor_gl_2k.jpg',
-        arm:     './material/exterior_wall_cladding_02_arm_2k.jpg',
+        diffuse:   './material/exterior_wall_cladding_02_diff_2k.jpg',
+        normal:    './material/exterior_wall_cladding_02_nor_gl_2k.jpg',
+        roughness: './material/exterior_wall_cladding_02_arm_2k.jpg',
     },
     'Red Brick': {
-        diffuse: './material/red_brick_03_diff_2k.jpg',
-        normal:  './material/red_brick_03_nor_gl_2k.jpg',
-        arm:     './material/red_brick_03_arm_2k.jpg',
+        diffuse:   './material/red_brick_03_diff_2k.jpg',
+        normal:    './material/red_brick_03_nor_gl_2k.jpg',
+        roughness: './material/red_brick_03_arm_2k.jpg',
     },
     'Red Brick 02': {
-        diffuse: './material/red_brick_diff_2k.jpg',
-        normal:  './material/red_brick_nor_gl_2k.jpg',
-        arm:     './material/red_brick_arm_2k.jpg',
+        diffuse:   './material/red_brick_diff_2k.jpg',
+        normal:    './material/red_brick_nor_gl_2k.jpg',
+        roughness: './material/red_brick_arm_2k.jpg',
     },
     'White Sand Stone': {
-        diffuse: './material/white_sandstone_bricks_03_diff_2k.jpg',
-        normal:  './material/white_sandstone_bricks_03_nor_gl_2k.jpg',
-        arm:     './material/white_sandstone_bricks_03_arm_2k.jpg',
+        diffuse:   './material/white_sandstone_bricks_03_diff_2k.jpg',
+        normal:    './material/white_sandstone_bricks_03_nor_gl_2k.jpg',
+        roughness: './material/white_sandstone_bricks_03_arm_2k.jpg',
     },
     'Wood Planks': {
-        diffuse: './material/wood_planks_diff_2k.jpg',
-        normal:  './material/wood_planks_nor_gl_2k.jpg',
-        arm:     './material/wood_planks_arm_2k.jpg',
+        diffuse:   './material/wood_planks_diff_2k.jpg',
+        normal:    './material/wood_planks_nor_gl_2k.jpg',
+        roughness: './material/wood_planks_arm_2k.jpg',
     },
     'Black Bricks': {
         diffuse: './material/bricks06_basecolor.jpg',
         normal:  './material/bricks06_normal_opengl.jpg',
-        arm:     './material/bricks06_roughness.jpg',
+        roughness:     './material/bricks06_roughness.jpg',
     },
     'Black Metal': {
-        diffuse: "./material/Metal028_1K-JPG_Color.jpg",
-        normal:  "./material/Metal028_1K-JPG_NormalGL.jpg",
-        arm:     "./material/Metal028_1K-JPG_Roughness.jpg",
+        diffuse:   "./material/Metal028_1K-JPG_Color.jpg",
+        normal:    "./material/Metal028_1K-JPG_NormalGL.jpg",
+        roughness: "./material/Metal028_1K-JPG_Roughness.jpg",
     },
     'Marble Tiles': {
-        diffuse: "./material/Marble tiles 1_BaseColor.jpg",
-        normal:  "./material/Marble tiles 1_Normal.jpg",
-        arm:     "./material/Marble tiles 1_Roughness.jpg",
+        diffuse:   "./material/Marble tiles 1_BaseColor.jpg",
+        normal:    "./material/Marble tiles 1_Normal.jpg",
+        roughness: "./material/Marble tiles 1_Roughness.jpg",
     }
 };
 
-Object.keys(materialLibrary).forEach(key => {
-    const mat = materialLibrary[key];
-    mat.diffuseMap = textureLoader.load(mat.diffuse);
-    mat.normalMap = textureLoader.load(mat.normal);
-    mat.armMap = textureLoader.load(mat.arm);
-
-    [mat.diffuseMap, mat.normalMap, mat.armMap].forEach(tex => {
-        tex.wrapS = THREE.RepeatWrapping;
-        tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(1.0, 1.0);
-    });
-    mat.diffuseMap.colorSpace = THREE.SRGBColorSpace;
-});
-
-const Materials: Record<string, THREE.MeshStandardMaterial> = {
+const MaterialsLibrary: Record<string, THREE.MeshStandardMaterial> = {
     'Anthracite': new THREE.MeshStandardMaterial({
         color: '#383E42',
         roughness: 0.2,
@@ -260,8 +251,8 @@ const Materials: Record<string, THREE.MeshStandardMaterial> = {
         color: '#BAC4C8', 
         metalness: 1.0,   
         roughness: 0.45,
-        normalMap: materialLibrary['Black Metal'].normalMap,
-        roughnessMap: materialLibrary['Black Metal'].roughnessMap,
+        // normalMap: TexturesLibrary['Black Metal'].normalMap,
+        // roughnessMap: TexturesLibrary['Black Metal'].roughnessMap,
     }),
     'White Plastic': new THREE.MeshStandardMaterial({ 
         color: '#ececec', 
@@ -270,52 +261,57 @@ const Materials: Record<string, THREE.MeshStandardMaterial> = {
     }),
 };
 
+const textureCache: Record<string, THREE.Texture> = {};
+function getTexture(path: string, isColorMap: boolean = false): THREE.Texture
+{
+    if (textureCache[path]) {
+        return textureCache[path];
+    }
+
+    const tex = textureLoader.load(path);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.colorSpace = isColorMap ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+    
+    textureCache[path] = tex;
+    return tex;
+}
+
+function getMaterialForOption(materialKey: string): THREE.MeshStandardMaterial
+{
+    const matData = TexturesLibrary[materialKey];
+    const mat = new THREE.MeshStandardMaterial({
+        map: getTexture(matData.diffuse, true),
+        normalMap: getTexture(matData.normal),
+        roughnessMap: getTexture(matData.roughness),
+        // aoMap: getTexture(matData.arm),
+        color: 0xffffff
+    });
+    applyWorldSpaceUVs(mat, 0.5);
+    return mat;
+}
+
 // Refrence to the door frame material. The same material is shared between all
 // the doors, so changing it will have a global effect on all of the frames.
 let door_mat: THREE.MeshStandardMaterial;
 let pipe_mat: THREE.MeshStandardMaterial;
 
+let exterior_mat = getMaterialForOption(state.exterior_finish);
+const roof_mat = getMaterialForOption('Black Metal');
+const floor_mat = getMaterialForOption('Marble Tiles');
+
 function changeDoorMaterial()
 {
     if (!door_mat) return;
-    door_mat.copy(Materials[state.doorFinish]);
+    door_mat.copy(MaterialsLibrary[state.door_finish]);
     door_mat.needsUpdate = true;
 }
 
 function changePipeMaterial() {
     if (!pipe_mat) return;
-    pipe_mat.copy(Materials[state.pipeFinish]);
+    pipe_mat.copy(MaterialsLibrary[state.pipe_finish]);
     pipe_mat.needsUpdate = true;
 }
-
-const startMat = materialLibrary[state.material];
-const globalExteriorMaterial = new THREE.MeshStandardMaterial({
-    color: 'white',
-    map: startMat.diffuseMap,
-    normalMap: startMat.normalMap,
-    aoMap: startMat.armMap,
-    roughnessMap: startMat.armMap,
-    metalnessMap: startMat.armMap,
-});
-applyWorldSpaceUVs(globalExteriorMaterial, 0.5);
-
-const roofMat = materialLibrary['Black Metal'];
-const globalRoofMaterial = new THREE.MeshStandardMaterial({
-    color:        'white',
-    map:          roofMat.diffuseMap,
-    normalMap:    roofMat.normalMap,
-    roughnessMap: roofMat.armMap,
-});
-applyWorldSpaceUVs(globalRoofMaterial, 0.5);
-
-const floorMat = materialLibrary['Marble Tiles'];
-const globalFloorMaterial = new THREE.MeshStandardMaterial({
-    color:        'white',
-    map:          floorMat.diffuseMap,
-    normalMap:    floorMat.normalMap,
-    roughnessMap: floorMat.armMap,
-});
-applyWorldSpaceUVs(globalFloorMaterial, 0.2);
 // ----------------------- 
 
 const base: Record<string, THREE.Mesh> = {};
@@ -333,7 +329,7 @@ const loaderScreen = document.getElementById('loader-screen');
 const loaderText = document.getElementById('loader-text');
 
 const dynamicFurniture: THREE.Object3D[] = [];
-let mixer:THREE.AnimationMixer = null;
+let mixer: THREE.AnimationMixer|null = null;
 
 gltfLoader.load("/model.glb", (gltf) => {
 
@@ -370,7 +366,7 @@ gltfLoader.load("/model.glb", (gltf) => {
         const mesh = node as THREE.Mesh;
         if (mesh.isMesh) {
             const mat = mesh.material as THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial;
-            if (mat && mat.transmission > 0) {
+            if (mat && (mat as THREE.MeshPhysicalMaterial).transmission > 0) {
                 mesh.castShadow = false; 
                 mesh.receiveShadow = true;
             } else {
@@ -395,30 +391,29 @@ gltfLoader.load("/model.glb", (gltf) => {
     base.pipeRight      = gltf.scene.getObjectByName("PipeRight") as THREE.Mesh;
     pipe_mat = base.pipeLeft.material as THREE.MeshStandardMaterial;
 
-    base.roofRight.material = globalRoofMaterial;
-    base.roofLeft.material  = globalRoofMaterial;
-    base.roofBack.material  = globalRoofMaterial;
+    base.roofRight.material = roof_mat;
+    base.roofLeft.material  = roof_mat;
+    base.roofBack.material  = roof_mat;
 
-    base.floor.material  = globalFloorMaterial;
+    base.floor.material  = floor_mat;
 
-    base.backWall.children[0].material       = globalExteriorMaterial;
-    base.leftWall.children[0].material       = globalExteriorMaterial;
-    base.rightWall.children[0].material      = globalExteriorMaterial;
-    base.frontLeftWall.children[0].material  = globalExteriorMaterial;
-    base.frontRightWall.children[0].material = globalExteriorMaterial;
-    base.frontTopWall.children[0].material   = globalExteriorMaterial;
+    (base.backWall.children[0] as THREE.Mesh).material       = exterior_mat;
+    (base.leftWall.children[0] as THREE.Mesh).material       = exterior_mat;
+    (base.rightWall.children[0] as THREE.Mesh).material      = exterior_mat;
+    (base.frontLeftWall.children[0] as THREE.Mesh).material  = exterior_mat;
+    (base.frontRightWall.children[0] as THREE.Mesh).material = exterior_mat;
+    (base.frontTopWall.children[0] as THREE.Mesh).material   = exterior_mat;
 
     const door_frame_obj = gltf.scene.getObjectByName("Door_1");
     if (door_frame_obj) {
         door_mat = (door_frame_obj as THREE.Mesh).material as THREE.MeshStandardMaterial;
     }
 
-    // Populate the door registry
-    Object.keys(pricing.doors).forEach(name => {
+    Object.keys(pricing.door_variants).forEach(name => {
         const obj = gltf.scene.getObjectByName(name) as THREE.Group;
         if (obj) {
             doorRegistry[name] = obj;
-            obj.visible = (name === state.doorModel);
+            obj.visible = (name === state.door_variant);
         }
     });
 
@@ -431,44 +426,45 @@ gltfLoader.load("/model.glb", (gltf) => {
         });
     }
 
-    base.roofLeft.visible  = !(state.roofVariant === "None");
-    base.roofRight.visible = !(state.roofVariant === "None");
-    base.roofBack.visible  = !(state.roofVariant === "None");
-    Object.keys(pricing.roofs).forEach(name => {
+    const is_hidden = (state.roof_variant !== "None");
+    base.roofLeft.visible  = is_hidden;
+    base.roofRight.visible = is_hidden;
+    base.roofBack.visible  = is_hidden;
+    Object.keys(pricing.roof_variants).forEach(name => {
         const mesh = gltf.scene.getObjectByName(name) as THREE.Mesh;
         if (mesh) {
             roofRegistry[name] = mesh;
-            (mesh.children[0] as THREE.Mesh).material = globalRoofMaterial;
-            mesh.visible = (name === state.roofVariant);
+            (mesh.children[0] as THREE.Mesh).material = roof_mat;
+            mesh.visible = (name === state.roof_variant);
         }
     });
 
     // Anchoring the furniture
-    const sofa = gltf.scene.getObjectByName("Sofa");
+    const sofa = gltf.scene.getObjectByName("Sofa") as THREE.Mesh;
     sofa.userData.anchorX = 'LeftWall';
     sofa.userData.anchorZ = 'LeftWall';
     sofa.userData.offsetX = sofa.position.x - base.leftWall.position.x;
     sofa.userData.offsetZ = sofa.position.z - base.leftWall.position.z;
     dynamicFurniture.push(sofa);
 
-    const painting = gltf.scene.getObjectByName("Painting");
+    const painting = gltf.scene.getObjectByName("Painting") as THREE.Mesh;
     painting.userData.anchorX = 'LeftWall';
     painting.userData.offsetX = painting.position.x - base.leftWall.position.x;
     dynamicFurniture.push(painting);
 
-    const plant = gltf.scene.getObjectByName("Plant");
+    const plant = gltf.scene.getObjectByName("Plant") as THREE.Mesh;
     plant.userData.anchorX = 'LeftWall';
     plant.userData.offsetX = plant.position.x - base.leftWall.position.x;
     dynamicFurniture.push(plant);
 
-    const tv = gltf.scene.getObjectByName("TV");
+    const tv = gltf.scene.getObjectByName("TV") as THREE.Mesh;
     tv.userData.anchorX = 'RightWall';
     tv.userData.anchorZ = 'RightWall';
     tv.userData.offsetX = tv.position.x - base.rightWall.position.x;
     tv.userData.offsetZ = tv.position.z - base.rightWall.position.z;
     dynamicFurniture.push(tv);
 
-    const cabinet = gltf.scene.getObjectByName("cabinet");
+    const cabinet = gltf.scene.getObjectByName("cabinet") as THREE.Mesh;
     cabinet.userData.anchorZ = 'BackWall';
     cabinet.userData.offsetZ = cabinet.position.z - base.backWall.position.z;
     cabinet.userData.visibleDepth = 0.8;
@@ -564,29 +560,14 @@ function updateUI() {
         hdriContainer.appendChild(btn);
     });
 
-    // Render Exterior Materials
+    // Exterior Finishes
     const materialContainer = document.getElementById('material-options')!;
     materialContainer.innerHTML = '';
 
-    Object.entries(pricing.materials).forEach(([matName, cost]) => {
-        const btn = createOptionButton(matName, cost, state.material === matName, () => {
-            state.material = matName;
-
-            // Grab the newly selected textures from your library
-            const newMatData = materialLibrary[matName];
-
-            // Update the maps on the single shared material
-            if (globalExteriorMaterial) {
-                globalExteriorMaterial.map = newMatData.diffuseMap;
-                globalExteriorMaterial.normalMap = newMatData.normalMap;
-                globalExteriorMaterial.aoMap = newMatData.armMap;
-                globalExteriorMaterial.roughnessMap = newMatData.armMap;
-                globalExteriorMaterial.metalnessMap = newMatData.armMap;
-
-                // Crucial: Tell Three.js to re-compile with the new textures
-                globalExteriorMaterial.needsUpdate = true;
-            }
-
+    Object.entries(pricing.exterior_finishes).forEach(([finish, cost]) => {
+        const btn = createOptionButton(finish, cost, state.exterior_finish === finish, () => {
+            state.exterior_finish = finish;
+            exterior_mat.copy(getMaterialForOption(finish));
             updateStateAndCost();
             updateUI();
         });
@@ -594,14 +575,15 @@ function updateUI() {
         materialContainer.appendChild(btn);
     });
 
-    // Render Doors
+    // Doors Variants
     const doorContainer = document.getElementById('door-options')!;
     doorContainer.innerHTML = '';
-    Object.entries(pricing.doors).forEach(([doorName, cost]) => {
-        const btn = createOptionButton(doorName.replace('_', ' '), cost, state.doorModel === doorName, () => {
-            state.doorModel = doorName;
+    Object.entries(pricing.door_variants).forEach(([variant, cost]) => {
+        const btn = createOptionButton(variant.replace('_', ' '), cost, state.door_variant === variant, () => {
+            state.door_variant = variant;
             Object.keys(doorRegistry).forEach(name => {
-                if (doorRegistry[name]) doorRegistry[name].visible = (name === doorName);
+                if (doorRegistry[name])
+                    doorRegistry[name].visible = (name === variant);
             });
             updateStateAndCost();
             updateUI();
@@ -609,12 +591,12 @@ function updateUI() {
         doorContainer.appendChild(btn);
     });
 
-    // Render Door Finishes
+    // Door Finishes
     const finishContainer = document.getElementById('door-color-options')!;
     finishContainer.innerHTML = '';
-    Object.entries(pricing.finishes).forEach(([finishName, cost]) => {
-        const btn = createOptionButton(finishName, cost, state.doorFinish === finishName, () => {
-            state.doorFinish = finishName;
+    Object.entries(pricing.door_finishes).forEach(([finish, cost]) => {
+        const btn = createOptionButton(finish, cost, state.door_finish === finish, () => {
+            state.door_finish = finish;
             changeDoorMaterial();
             updateStateAndCost();
             updateUI();
@@ -622,50 +604,44 @@ function updateUI() {
 
         const swatch = document.createElement('div');
         swatch.className = 'w-4 h-4 rounded-full mt-2 border border-white/20 shadow-sm';
-        swatch.style.backgroundColor = Materials[finishName].color.getStyle();
+        swatch.style.backgroundColor = MaterialsLibrary[finish].color.getStyle();
         btn.appendChild(swatch);
 
         finishContainer.appendChild(btn);
     });
 
-    // Render roof variants
+    // Roof variants
     const roofContainer = document.getElementById('roof-options');
     if (roofContainer) {
         roofContainer.innerHTML = '';
-        Object.entries(pricing.roofs).forEach(([roofName, cost]) => {
-            const btn = createOptionButton(roofName.replace('_', ' '), cost, state.roofVariant === roofName, () => {
-
-                state.roofVariant = roofName;
-                base.roofLeft.visible = !(roofName === "None");
-                base.roofRight.visible = !(roofName === "None");
-                base.roofBack.visible = !(roofName === "None");
-
+        Object.entries(pricing.roof_variants).forEach(([variant, cost]) => {
+            const btn = createOptionButton(variant.replace('_', ' '), cost, state.roof_variant === variant, () => {
+                state.roof_variant = variant;
+                const hide_roof = (variant !== "None");
+                base.roofLeft.visible  = hide_roof;
+                base.roofRight.visible = hide_roof;
+                base.roofBack.visible  = hide_roof;
                 Object.keys(roofRegistry).forEach(name => {
                     if (roofRegistry[name]) {
-                        roofRegistry[name].visible = (name === roofName);
+                        roofRegistry[name].visible = (name === variant);
                     }
                 });
-
                 updateStateAndCost();
                 updateUI();
             });
             roofContainer.appendChild(btn);
         });
     }
+
+    // Pipe Layouts
     const pipeLayoutContainer = document.getElementById('pipe-options');
     if (pipeLayoutContainer) {
         pipeLayoutContainer.innerHTML = '';
-        Object.entries(pricing.pipeLayout).forEach(([layoutName, cost]) => {
-            const btn = createOptionButton(layoutName, cost, state.pipeLayout === layoutName, () => {
-
-                // 1. Update State
-                state.pipeLayout = layoutName;
-
-                // 2. Toggle Visibility based on the selected layout
-                if (base.pipeLeft) base.pipeLeft.visible = (layoutName === 'Left Only' || layoutName === 'Both');
-                if (base.pipeRight) base.pipeRight.visible = (layoutName === 'Right Only' || layoutName === 'Both');
-
-                // 3. Update Pricing and UI
+        Object.entries(pricing.pipe_layouts).forEach(([layout, cost]) => {
+            const btn = createOptionButton(layout, cost, state.pipe_layout === layout, () => {
+                state.pipe_layout = layout;
+                base.pipeLeft.visible  = (layout === 'Left Only' || layout === 'Both');
+                base.pipeRight.visible = (layout === 'Right Only' || layout === 'Both');
                 updateStateAndCost();
                 updateUI();
             });
@@ -673,20 +649,14 @@ function updateUI() {
         });
     }
 
-    // Render Pipe Materials
+    // Pipe Finishes
     const pipeFinishContainer = document.getElementById('pipe-material-options');
     if (pipeFinishContainer) {
         pipeFinishContainer.innerHTML = '';
-        Object.entries(pricing.pipeFinishes).forEach(([matName, cost]) => {
-            const btn = createOptionButton(matName, cost, state.pipeFinish === matName, () => {
-
-                // 1. Update State
-                state.pipeFinish = matName;
-
-                // 2. Apply the material changes
+        Object.entries(pricing.pipe_finishes).forEach(([finish, cost]) => {
+            const btn = createOptionButton(finish, cost, state.pipe_finish === finish, () => {
+                state.pipe_finish = finish;
                 changePipeMaterial();
-
-                // 3. Update Pricing and UI
                 updateStateAndCost();
                 updateUI();
             });
@@ -696,7 +666,7 @@ function updateUI() {
 
     const animationBtn = document.getElementById('animation-toggle');
     if (animationBtn) {
-        const isAnimatedDoor = state.doorModel === 'Door_Animated'; 
+        const isAnimatedDoor = true;//= state.door_variant === 'Door_Animated'; 
 
         if (isAnimatedDoor) {
             animationBtn.classList.remove('hidden');
@@ -845,23 +815,25 @@ document.getElementById('elevation-slider')?.addEventListener('input', (e) => {
 });
 
 function updateStateAndCost() {
-    const dimCost = ((state.width || 0) * pricing.dimensions.widthMax) + ((state.depth || 0) * pricing.dimensions.depthMax);
-    const matCost = pricing.materials[state.material as keyof typeof pricing.materials] || 0;
-    const doorCost = pricing.doors[state.doorModel as keyof typeof pricing.doors] || 0;
-    const finishCost = pricing.finishes[state.doorFinish as keyof typeof pricing.finishes] || 0;
-    const roofCost = pricing.roofs[state.roofVariant as keyof typeof pricing.roofs] || 0;
-    const pipeLayoutCost = pricing.pipeLayout ? (pricing.pipeLayout[state.pipeLayout as keyof typeof pricing.pipeLayout] || 0) : 0;
-    const pipeMatCost = pricing.pipeFinishes ? (pricing.pipeFinishes[state.pipeFinish as keyof typeof pricing.pipeFinishes] || 0) : 0; 
-    const newTotal = pricing.base + dimCost + matCost + doorCost + finishCost + roofCost + pipeLayoutCost + pipeMatCost;
-    const priceElement = document.getElementById('total-price');
+    const dimension_cost = ((state.width || 0) * pricing.dimensions.widthMax) +
+                           ((state.depth || 0) * pricing.dimensions.depthMax);
+    const exterior_cost = pricing.exterior_finishes[state.exterior_finish as keyof typeof pricing.exterior_finishes];
+    const door_variant_cost = pricing.door_variants[state.door_variant as keyof typeof pricing.door_variants];
+    const door_finish_cost  = pricing.door_finishes[state.door_finish as keyof typeof pricing.door_finishes];
+    const roof_variant_cost = pricing.roof_variants[state.roof_variant as keyof typeof pricing.roof_variants];
+    const pipe_layout_cost  = pricing.pipe_layouts[state.pipe_layout as keyof typeof pricing.pipe_layouts];
+    const pipe_finish_cost  = pricing.pipe_finishes[state.pipe_finish as keyof typeof pricing.pipe_finishes];
+
+    const total = pricing.base + dimension_cost + exterior_cost + door_variant_cost +
+        door_finish_cost + roof_variant_cost + pipe_layout_cost + pipe_finish_cost;
+
+    const priceElement = document.getElementById('total-price')!;
     gsap.to(state, {
-        currentTotal: newTotal,
+        current_total: total,
         duration: 0.5,
         ease: "power2.out",
         onUpdate: () => {
-            if (priceElement) {
-                priceElement.innerText = Math.round(state.currentTotal).toLocaleString();
-            }
+            priceElement.innerText = Math.round(state.current_total).toLocaleString();
         }
     });
 }
