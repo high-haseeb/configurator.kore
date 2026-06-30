@@ -3,14 +3,58 @@ import * as THREE from 'three';
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
-// import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
-// import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
-import gsap from "gsap";
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-// import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import gsap from "gsap";
+
+// HDRI
+import cobblestoneUrl from './assets/hdri/cobblestone_parish_road_1k.hdr';
+import germanTownUrl from './assets/hdri/german_town_street_1k.hdr';
+import docklandsUrl from './assets/hdri/docklands_02_1k.hdr';
+import parkUrl from './assets/hdri/charolettenbrunn_park_1k.hdr';
+
+// Cladding
+import claddingDiff from './assets/material/exterior_wall_cladding_02_diff_2k.jpg';
+import claddingNorm from './assets/material/exterior_wall_cladding_02_nor_gl_2k.jpg';
+import claddingRough from './assets/material/exterior_wall_cladding_02_arm_2k.jpg';
+
+// Red Brick
+import redBrickDiff from './assets/material/red_brick_03_diff_2k.jpg';
+import redBrickNorm from './assets/material/red_brick_03_nor_gl_2k.jpg';
+import redBrickRough from './assets/material/red_brick_03_arm_2k.jpg';
+
+// Red Brick 02
+import redBrick02Diff from './assets/material/red_brick_diff_2k.jpg';
+import redBrick02Norm from './assets/material/red_brick_nor_gl_2k.jpg';
+import redBrick02Rough from './assets/material/red_brick_arm_2k.jpg';
+
+// White Sand Stone
+import sandstoneDiff from './assets/material/white_sandstone_bricks_03_diff_2k.jpg';
+import sandstoneNorm from './assets/material/white_sandstone_bricks_03_nor_gl_2k.jpg';
+import sandstoneRough from './assets/material/white_sandstone_bricks_03_arm_2k.jpg';
+
+// Wood Planks
+import woodDiff from './assets/material/wood_planks_diff_2k.jpg';
+import woodNorm from './assets/material/wood_planks_nor_gl_2k.jpg';
+import woodRough from './assets/material/wood_planks_arm_2k.jpg';
+
+// Black Bricks
+import blackBrickDiff from './assets/material/bricks06_basecolor.jpg';
+import blackBrickNorm from './assets/material/bricks06_normal_opengl.jpg';
+import blackBrickRough from './assets/material/bricks06_roughness.jpg';
+
+// Black Metal
+import blackMetalDiff from './assets/material/Metal028_1K-JPG_Color.jpg';
+import blackMetalNorm from './assets/material/Metal028_1K-JPG_NormalGL.jpg';
+import blackMetalRough from './assets/material/Metal028_1K-JPG_Roughness.jpg';
+
+// Marble Tiles
+import marbleDiff from './assets/material/Marble tiles 1_BaseColor.jpg';
+import marbleNorm from './assets/material/Marble tiles 1_Normal.jpg';
+import marbleRough from './assets/material/Marble tiles 1_Roughness.jpg';
 
 const pricing = {
     base: 15000,
@@ -157,11 +201,10 @@ controls.autoRotate = false;
 // HDRI ----------------------- 
 const rgbeLoader = new HDRLoader();
 const hdriLibrary: Record<string, string> = {
-    'Autumn Hill View':   './hdri/autumn_hill_view_2k.hdr',
-    'Cobblestone':        './hdri/cobblestone_parish_road_1k.hdr',
-    'German Town Street': './hdri/german_town_street_1k.hdr',
-    'DockLands':          './hdri/docklands_02_1k.hdr',
-    'Park':               './hdri/charolettenbrunn_park_1k.hdr'
+    'Cobblestone':       cobblestoneUrl,
+    'German Town Street': germanTownUrl,
+    'DockLands':          docklandsUrl,
+    'Park':               parkUrl
 };
 
 function loadEnvironment(hdriName: string)
@@ -181,44 +224,44 @@ loadEnvironment(state.hdri);
 // MaterialsLibrary ----------------------- 
 const TexturesLibrary: Record<string, any> = {
     'Cladding': {
-        diffuse:   './material/exterior_wall_cladding_02_diff_2k.jpg',
-        normal:    './material/exterior_wall_cladding_02_nor_gl_2k.jpg',
-        roughness: './material/exterior_wall_cladding_02_arm_2k.jpg',
+        diffuse:   claddingDiff,
+        normal:    claddingNorm,
+        roughness: claddingRough,
     },
     'Red Brick': {
-        diffuse:   './material/red_brick_03_diff_2k.jpg',
-        normal:    './material/red_brick_03_nor_gl_2k.jpg',
-        roughness: './material/red_brick_03_arm_2k.jpg',
+        diffuse:   redBrickDiff,
+        normal:    redBrickNorm,
+        roughness: redBrickRough,
     },
     'Red Brick 02': {
-        diffuse:   './material/red_brick_diff_2k.jpg',
-        normal:    './material/red_brick_nor_gl_2k.jpg',
-        roughness: './material/red_brick_arm_2k.jpg',
+        diffuse:   redBrick02Diff,
+        normal:    redBrick02Norm,
+        roughness: redBrick02Rough,
     },
     'White Sand Stone': {
-        diffuse:   './material/white_sandstone_bricks_03_diff_2k.jpg',
-        normal:    './material/white_sandstone_bricks_03_nor_gl_2k.jpg',
-        roughness: './material/white_sandstone_bricks_03_arm_2k.jpg',
+        diffuse:   sandstoneDiff,
+        normal:    sandstoneNorm,
+        roughness: sandstoneRough,
     },
     'Wood Planks': {
-        diffuse:   './material/wood_planks_diff_2k.jpg',
-        normal:    './material/wood_planks_nor_gl_2k.jpg',
-        roughness: './material/wood_planks_arm_2k.jpg',
+        diffuse:   woodDiff,
+        normal:    woodNorm,
+        roughness: woodRough,
     },
     'Black Bricks': {
-        diffuse: './material/bricks06_basecolor.jpg',
-        normal:  './material/bricks06_normal_opengl.jpg',
-        roughness:     './material/bricks06_roughness.jpg',
+        diffuse:   blackBrickDiff,
+        normal:    blackBrickNorm,
+        roughness: blackBrickRough,
     },
     'Black Metal': {
-        diffuse:   "./material/Metal028_1K-JPG_Color.jpg",
-        normal:    "./material/Metal028_1K-JPG_NormalGL.jpg",
-        roughness: "./material/Metal028_1K-JPG_Roughness.jpg",
+        diffuse:   blackMetalDiff,
+        normal:    blackMetalNorm,
+        roughness: blackMetalRough,
     },
     'Marble Tiles': {
-        diffuse:   "./material/Marble tiles 1_BaseColor.jpg",
-        normal:    "./material/Marble tiles 1_Normal.jpg",
-        roughness: "./material/Marble tiles 1_Roughness.jpg",
+        diffuse:   marbleDiff,
+        normal:    marbleNorm,
+        roughness: marbleRough,
     }
 };
 
@@ -320,10 +363,10 @@ const doorRegistry: { [key: string]: THREE.Object3D } = {};
 
 const gltfLoader = new GLTFLoader();
 // gltfLoader.setMeshoptDecoder(MeshoptDecoder);
-// const dracoLoader = new DRACOLoader();
-// dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
-// dracoLoader.preload();
-// gltfLoader.setDRACOLoader(dracoLoader);
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+dracoLoader.preload();
+gltfLoader.setDRACOLoader(dracoLoader);
 
 const loaderScreen = document.getElementById('loader-screen');
 const loaderText = document.getElementById('loader-text');
@@ -331,7 +374,7 @@ const loaderText = document.getElementById('loader-text');
 const dynamicFurniture: THREE.Object3D[] = [];
 let mixer: THREE.AnimationMixer|null = null;
 
-gltfLoader.load("/model.glb", (gltf) => {
+gltfLoader.load("/model-opt.glb", (gltf) => {
 
     const shadowPlaneGeometry = new THREE.PlaneGeometry(100, 100);
     const shadowPlaneMaterial = new THREE.ShadowMaterial({ opacity: 0.4, color: 0x000000 });
