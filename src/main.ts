@@ -2,16 +2,16 @@ import "./style.css";
 import * as THREE from 'three';
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
-import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
+// import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+// import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import gsap from "gsap";
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js';
+// import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 
-// --- Pricing & State Configuration ---
 const pricing = {
     base: 15000,
     dimensions: { widthMax: 2500, depthMax: 3000 },
@@ -27,7 +27,10 @@ const pricing = {
         'Door_Animated': 2300,
     },
     finishes: {
-        'Anthracite': 0, 'White': 0, 'Oak': 250, 'Walnut': 300
+        'Anthracite': 0,
+        'White': 0,
+        'Oak': 250,
+        'Walnut': 300,
     },
     roofs: {
         'None': 0,
@@ -44,7 +47,7 @@ const pricing = {
         'Right Only': 150, 
         'Both': 250
     },
-    pipeMaterials: {
+    pipeFinishes: {
         'Black PVC': 0, 
         'Zinc': 100, 
         'White Plastic': 200
@@ -56,18 +59,17 @@ const state = {
     depth: 0,
     material: 'Black Bricks',
     doorModel: 'Door_1',
-    doorFinish: 'Anthracite',
-    roofVariant: 'Skylight_Lean_1',
+    doorFinish: 'White',
+    roofVariant: 'None',
     hdri: 'Cobblestone',
     sunIntensity: 2.5,
     sunAzimuth: 45,
     sunElevation: 30,
     currentTotal: pricing.base,
     pipeLayout: 'Left Only',
-    pipeMaterial: 'Black PVC',
+    pipeFinish: 'Zinc',
     isPlaying: true,
 };
-
 
 const cameraState = {
     isInterior: false,
@@ -102,11 +104,21 @@ const composer = new EffectComposer(renderer, renderTarget);
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
 
-const ssaoPass = new SSAOPass(scene, camera, containerWidth, containerHeight);
-ssaoPass.kernelRadius = 4.0;
-ssaoPass.minDistance = 0.0001;
-ssaoPass.maxDistance = 0.01;
-composer.addPass(ssaoPass);
+const textureLoader = new THREE.TextureLoader();
+
+const gtaoPass = new GTAOPass(scene, camera, containerWidth, containerHeight);
+gtaoPass.output = GTAOPass.OUTPUT.Default;
+composer.addPass(gtaoPass);
+
+// const ssaoPass = new SSAOPass(scene, camera, containerWidth, containerHeight);
+// ssaoPass.output = SSAOPass.OUTPUT.SSAO;
+// ssaoPass.kernelRadius = 4.0;
+// ssaoPass.minDistance = 0.0001;
+// ssaoPass.maxDistance = 0.01;
+// composer.addPass(ssaoPass);
+import { FilmPass } from 'three/addons/postprocessing/FilmPass.js';
+const filmPass = new FilmPass(0.2, false);
+composer.addPass(filmPass);
 
 const outputPass = new OutputPass();
 composer.addPass(outputPass);
@@ -119,15 +131,6 @@ sunLight.shadow.mapSize.height = 2048;
 sunLight.shadow.bias = -0.0001;
 scene.add(sunLight);
 
-const shadowPlaneGeometry = new THREE.PlaneGeometry(100, 100);
-const shadowPlaneMaterial = new THREE.ShadowMaterial({ opacity: 0.4, color: 0x000000 });
-const shadowPlane = new THREE.Mesh(shadowPlaneGeometry, shadowPlaneMaterial);
-shadowPlane.rotation.x = -Math.PI / 2;
-shadowPlane.position.y = -1.31;
-shadowPlane.receiveShadow = true;
-scene.add(shadowPlane);
-
-// Helper function to calculate sun position from UI angles
 function updateSunPosition() {
     const radius = 20;
     // Convert elevation and azimuth to radians
@@ -138,22 +141,26 @@ function updateSunPosition() {
     sunLight.position.setFromSphericalCoords(radius, phi, theta);
     sunLight.intensity = state.sunIntensity;
 }
-updateSunPosition(); // Set initial position
+updateSunPosition();
 
 const controls = new OrbitControls(camera, renderer.domElement);
+controls.minPolarAngle = -0
+controls.maxPolarAngle = Math.PI/2;
 controls.enableDamping = true;
-controls.autoRotate = true;
+controls.autoRotate = false;
 
-// --- HDRI Setup ---
-const rgbeLoader = new RGBELoader();
+// HDRI ----------------------- 
+const rgbeLoader = new HDRLoader();
 const hdriLibrary: Record<string, string> = {
-    'Cobblestone': './hdri/cobblestone_parish_road_1k.hdr',
-    'German Town Street': './hdri/german_town_street_1k.hdr', 
-    'DockLands': './hdri/docklands_02_1k.hdr',
-    'Park': './hdri/charolettenbrunn_park_1k.hdr'
+    'Autumn Hill View':   './hdri/autumn_hill_view_2k.hdr',
+    'Cobblestone':        './hdri/cobblestone_parish_road_1k.hdr',
+    'German Town Street': './hdri/german_town_street_1k.hdr',
+    'DockLands':          './hdri/docklands_02_1k.hdr',
+    'Park':               './hdri/charolettenbrunn_park_1k.hdr'
 };
 
-function loadEnvironment(hdriName: string) {
+function loadEnvironment(hdriName: string)
+{
     const path = hdriLibrary[hdriName];
     if (!path) return;
 
@@ -161,29 +168,52 @@ function loadEnvironment(hdriName: string) {
         texture.mapping = THREE.EquirectangularReflectionMapping;
         scene.environment = texture;
         scene.environmentIntensity = 0.8;
-        // scene.background = texture; // Uncomment if you want to see the skybox instead of a solid color
     });
 }
-loadEnvironment(state.hdri); // Load initial
+loadEnvironment(state.hdri);
+// ----------------------- 
 
-// --- Materials Setup ---
-const textureLoader = new THREE.TextureLoader();
+// Materials ----------------------- 
 const materialLibrary: Record<string, any> = {
-    'Cladding': { diffuse: './material/exterior_wall_cladding_02_diff_2k.jpg', normal: './material/exterior_wall_cladding_02_nor_gl_2k.jpg', arm: './material/exterior_wall_cladding_02_arm_2k.jpg', repeat: 1.0 },
-    'Red Brick': { diffuse: './material/red_brick_03_diff_2k.jpg', normal: './material/red_brick_03_nor_gl_2k.jpg', arm: './material/red_brick_03_arm_2k.jpg', repeat: 1.0 },
-    'Red Brick 02': { diffuse: './material/red_brick_diff_2k.jpg', normal: './material/red_brick_nor_gl_2k.jpg', arm: './material/red_brick_arm_2k.jpg', repeat: 1.0 },
-    'White Sand Stone': { diffuse: './material/white_sandstone_bricks_03_diff_2k.jpg', normal: './material/white_sandstone_bricks_03_nor_gl_2k.jpg', arm: './material/white_sandstone_bricks_03_arm_2k.jpg', repeat: 0.8 },
-    'Wood Planks': { diffuse: './material/wood_planks_diff_2k.jpg', normal: './material/wood_planks_nor_gl_2k.jpg', arm: './material/wood_planks_arm_2k.jpg', repeat: 1.0 },
-    'Black Bricks': { diffuse: './material/bricks06_basecolor.jpg', normal: './material/bricks06_normal_opengl.jpg', arm: './material/bricks06_roughness.jpg', repeat: 0.7 },
+    'Cladding': {
+        diffuse: './material/exterior_wall_cladding_02_diff_2k.jpg',
+        normal:  './material/exterior_wall_cladding_02_nor_gl_2k.jpg',
+        arm:     './material/exterior_wall_cladding_02_arm_2k.jpg',
+    },
+    'Red Brick': {
+        diffuse: './material/red_brick_03_diff_2k.jpg',
+        normal:  './material/red_brick_03_nor_gl_2k.jpg',
+        arm:     './material/red_brick_03_arm_2k.jpg',
+    },
+    'Red Brick 02': {
+        diffuse: './material/red_brick_diff_2k.jpg',
+        normal:  './material/red_brick_nor_gl_2k.jpg',
+        arm:     './material/red_brick_arm_2k.jpg',
+    },
+    'White Sand Stone': {
+        diffuse: './material/white_sandstone_bricks_03_diff_2k.jpg',
+        normal:  './material/white_sandstone_bricks_03_nor_gl_2k.jpg',
+        arm:     './material/white_sandstone_bricks_03_arm_2k.jpg',
+    },
+    'Wood Planks': {
+        diffuse: './material/wood_planks_diff_2k.jpg',
+        normal:  './material/wood_planks_nor_gl_2k.jpg',
+        arm:     './material/wood_planks_arm_2k.jpg',
+    },
+    'Black Bricks': {
+        diffuse: './material/bricks06_basecolor.jpg',
+        normal:  './material/bricks06_normal_opengl.jpg',
+        arm:     './material/bricks06_roughness.jpg',
+    },
     'Black Metal': {
         diffuse: "./material/Metal028_1K-JPG_Color.jpg",
-        normal: "./material/Metal028_1K-JPG_NormalGL.jpg",
-        arm: "./material/Metal028_1K-JPG_Roughness.jpg",
+        normal:  "./material/Metal028_1K-JPG_NormalGL.jpg",
+        arm:     "./material/Metal028_1K-JPG_Roughness.jpg",
     },
     'Marble Tiles': {
         diffuse: "./material/Marble tiles 1_BaseColor.jpg",
-        normal: "./material/Marble tiles 1_Normal.jpg",
-        arm: "./material/Marble tiles 1_Roughness.jpg",
+        normal:  "./material/Marble tiles 1_Normal.jpg",
+        arm:     "./material/Marble tiles 1_Roughness.jpg",
     }
 };
 
@@ -196,42 +226,67 @@ Object.keys(materialLibrary).forEach(key => {
     [mat.diffuseMap, mat.normalMap, mat.armMap].forEach(tex => {
         tex.wrapS = THREE.RepeatWrapping;
         tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(mat.repeat, mat.repeat);
+        tex.repeat.set(1.0, 1.0);
     });
     mat.diffuseMap.colorSpace = THREE.SRGBColorSpace;
 });
 
-const palette: Record<string, string> = {
-    'Anthracite': '#383E42', 'White': '#ffffff', 'Oak': '#a0855b', 'Walnut': '#4a3728'
+const Materials: Record<string, THREE.MeshStandardMaterial> = {
+    'Anthracite': new THREE.MeshStandardMaterial({
+        color: '#383E42',
+        roughness: 0.2,
+        metalness: 0.8,
+    }),
+    'White': new THREE.MeshStandardMaterial({
+        color: '#ffffff',
+        roughness: 0.5,
+    }),
+    'Oak': new THREE.MeshStandardMaterial({
+        color: '#a0855b',
+        roughness: 0.8,
+        metalness: 0.0
+    }),
+    'Walnut': new THREE.MeshStandardMaterial({
+        color: '#4a3728',
+        roughness: 0.7,
+        metalness: 0.0
+    }),
+    'Black PVC': new THREE.MeshStandardMaterial({ 
+        color: '#222222', 
+        metalness: 0.0,   
+        roughness: 0.35   
+    }),
+    'Zinc': new THREE.MeshStandardMaterial({ 
+        color: '#BAC4C8', 
+        metalness: 1.0,   
+        roughness: 0.45,
+        normalMap: materialLibrary['Black Metal'].normalMap,
+        roughnessMap: materialLibrary['Black Metal'].roughnessMap,
+    }),
+    'White Plastic': new THREE.MeshStandardMaterial({ 
+        color: '#ececec', 
+        metalness: 0.0,   
+        roughness: 0.3    
+    }),
 };
 
-const base = {
-    leftWall: null,
-    rightWall: null,
-    backWall: null,
-    frontLeftWall: null,
-    frontRightWall: null,
-    frontTopWall: null,
-    floor: null,
-    roofRight: null,
-    roofLeft: null,
-    roofBack: null,
-    pipeLeft: null,
-    pipeRight: null,
-};
+// Refrence to the door frame material. The same material is shared between all
+// the doors, so changing it will have a global effect on all of the frames.
+let door_mat: THREE.MeshStandardMaterial;
+let pipe_mat: THREE.MeshStandardMaterial;
 
-let model: THREE.Mesh | null = null;
-const roofRegistry: { [key: string]: THREE.Mesh } = {};
-const doorRegistry: { [key: string]: THREE.Mesh } = {};
-const gltfLoader = new GLTFLoader();
-// gltfLoader.setMeshoptDecoder(MeshoptDecoder);
-// const dracoLoader = new DRACOLoader();
-// dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
-// dracoLoader.preload();
-// gltfLoader.setDRACOLoader(dracoLoader);
+function changeDoorMaterial()
+{
+    if (!door_mat) return;
+    door_mat.copy(Materials[state.doorFinish]);
+    door_mat.needsUpdate = true;
+}
 
-const loaderScreen = document.getElementById('loader-screen');
-const loaderText = document.getElementById('loader-text');
+function changePipeMaterial() {
+    if (!pipe_mat) return;
+    pipe_mat.copy(Materials[state.pipeFinish]);
+    pipe_mat.needsUpdate = true;
+}
 
 const startMat = materialLibrary[state.material];
 const globalExteriorMaterial = new THREE.MeshStandardMaterial({
@@ -242,34 +297,63 @@ const globalExteriorMaterial = new THREE.MeshStandardMaterial({
     roughnessMap: startMat.armMap,
     metalnessMap: startMat.armMap,
 });
+applyWorldSpaceUVs(globalExteriorMaterial, 0.5);
 
 const roofMat = materialLibrary['Black Metal'];
 const globalRoofMaterial = new THREE.MeshStandardMaterial({
-    color: 'white',
-    map: roofMat.diffuseMap,
-    normalMap: roofMat.normalMap,
-    // aoMap: roofMat.armMap,
+    color:        'white',
+    map:          roofMat.diffuseMap,
+    normalMap:    roofMat.normalMap,
     roughnessMap: roofMat.armMap,
-    // metalnessMap: roofMat.armMap,
 });
 applyWorldSpaceUVs(globalRoofMaterial, 0.5);
 
 const floorMat = materialLibrary['Marble Tiles'];
 const globalFloorMaterial = new THREE.MeshStandardMaterial({
-    color: 'white',
-    map: floorMat.diffuseMap,
-    normalMap: floorMat.normalMap,
-    // aoMap: floorMat.armMap,
+    color:        'white',
+    map:          floorMat.diffuseMap,
+    normalMap:    floorMat.normalMap,
     roughnessMap: floorMat.armMap,
-    // metalnessMap: floorMat.armMap,
 });
 applyWorldSpaceUVs(globalFloorMaterial, 0.2);
+// ----------------------- 
+
+const base: Record<string, THREE.Mesh> = {};
+const roofRegistry: { [key: string]: THREE.Mesh } = {};
+const doorRegistry: { [key: string]: THREE.Object3D } = {};
+
+const gltfLoader = new GLTFLoader();
+// gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+// const dracoLoader = new DRACOLoader();
+// dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+// dracoLoader.preload();
+// gltfLoader.setDRACOLoader(dracoLoader);
+
+const loaderScreen = document.getElementById('loader-screen');
+const loaderText = document.getElementById('loader-text');
 
 const dynamicFurniture: THREE.Object3D[] = [];
 let mixer:THREE.AnimationMixer = null;
 
 gltfLoader.load("/model.glb", (gltf) => {
-    model = gltf.scene;
+
+    const shadowPlaneGeometry = new THREE.PlaneGeometry(100, 100);
+    const shadowPlaneMaterial = new THREE.ShadowMaterial({ opacity: 0.4, color: 0x000000 });
+    const shadowPlane = new THREE.Mesh(shadowPlaneGeometry, shadowPlaneMaterial);
+    shadowPlane.rotation.x = -Math.PI / 2;
+    shadowPlane.position.y = 0;
+    shadowPlane.receiveShadow = true;
+    gltf.scene.add(shadowPlane);
+
+    const model = gltf.scene;
+    const box = new THREE.Box3().setFromObject(model);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+
+    // Reposition the model so its center is at (0,0,0)
+    model.position.x += (model.position.x - center.x);
+    model.position.y += (model.position.y - center.y);
+    model.position.z += (model.position.z - center.z)
 
     const blenderCamera = gltf.scene.getObjectByName('InteriorCamera');
     if (blenderCamera) {
@@ -296,35 +380,26 @@ gltfLoader.load("/model.glb", (gltf) => {
         }
     });
 
-    base.rightWall      = model.getObjectByName("RightWall");
-    base.leftWall       = model.getObjectByName("LeftWall");
-    base.backWall       = model.getObjectByName("BackWall");
-    base.frontLeftWall  = model.getObjectByName("FrontLeft");
-    base.frontRightWall = model.getObjectByName("FrontRight");
-    base.frontTopWall   = model.getObjectByName("FrontTop");
-    base.floor   = model.getObjectByName("Floor");
-    base.roofRight = model.getObjectByName("RoofRight");
-    base.roofLeft = model.getObjectByName("RoofLeft");
-    base.roofBack = model.getObjectByName("RoofBack");
+    base.rightWall      = gltf.scene.getObjectByName("RightWall") as THREE.Mesh;
+    base.leftWall       = gltf.scene.getObjectByName("LeftWall") as THREE.Mesh;
+    base.backWall       = gltf.scene.getObjectByName("BackWall") as THREE.Mesh;
+    base.frontLeftWall  = gltf.scene.getObjectByName("FrontLeft") as THREE.Mesh;
+    base.frontRightWall = gltf.scene.getObjectByName("FrontRight") as THREE.Mesh;
+    base.frontTopWall   = gltf.scene.getObjectByName("FrontTop") as THREE.Mesh;
+    base.floor          = gltf.scene.getObjectByName("Floor") as THREE.Mesh;
+    base.roofRight      = gltf.scene.getObjectByName("RoofRight") as THREE.Mesh;
+    base.roofLeft       = gltf.scene.getObjectByName("RoofLeft") as THREE.Mesh;
+    base.roofBack       = gltf.scene.getObjectByName("RoofBack") as THREE.Mesh;
 
-    base.pipeLeft = model.getObjectByName("PipeLeft");
-    base.pipeRight = model.getObjectByName("PipeRight");
-    applyPipeMaterial(state.pipeMaterial);
+    base.pipeLeft       = gltf.scene.getObjectByName("PipeLeft") as THREE.Mesh;
+    base.pipeRight      = gltf.scene.getObjectByName("PipeRight") as THREE.Mesh;
+    pipe_mat = base.pipeLeft.material as THREE.MeshStandardMaterial;
 
     base.roofRight.material = globalRoofMaterial;
     base.roofLeft.material  = globalRoofMaterial;
     base.roofBack.material  = globalRoofMaterial;
 
     base.floor.material  = globalFloorMaterial;
-
-    [globalExteriorMaterial.map, globalExteriorMaterial.normalMap, globalExteriorMaterial.aoMap].forEach(tex => {
-        if (tex) {
-            tex.wrapS = THREE.RepeatWrapping;
-            tex.wrapT = THREE.RepeatWrapping;
-        }
-    });
-
-    applyWorldSpaceUVs(globalExteriorMaterial, 0.5);
 
     base.backWall.children[0].material       = globalExteriorMaterial;
     base.leftWall.children[0].material       = globalExteriorMaterial;
@@ -333,30 +408,37 @@ gltfLoader.load("/model.glb", (gltf) => {
     base.frontRightWall.children[0].material = globalExteriorMaterial;
     base.frontTopWall.children[0].material   = globalExteriorMaterial;
 
+    const door_frame_obj = gltf.scene.getObjectByName("Door_1");
+    if (door_frame_obj) {
+        door_mat = (door_frame_obj as THREE.Mesh).material as THREE.MeshStandardMaterial;
+    }
+
+    // Populate the door registry
     Object.keys(pricing.doors).forEach(name => {
-        const mesh = gltf.scene.getObjectByName(name) as THREE.Mesh;
-        if (mesh) {
-            doorRegistry[name] = mesh;
-            mesh.visible = (name === state.doorModel);
+        const obj = gltf.scene.getObjectByName(name) as THREE.Group;
+        if (obj) {
+            doorRegistry[name] = obj;
+            obj.visible = (name === state.doorModel);
         }
     });
+
     mixer = new THREE.AnimationMixer(gltf.scene);
     if (gltf.animations && gltf.animations.length > 0) {
-            gltf.animations.forEach((clip) => {
-                const action = mixer!.clipAction(clip);
-                action.setLoop(THREE.LoopPingPong, Infinity);
-                action.play();
-            });
-        }
+        gltf.animations.forEach((clip) => {
+            const action = mixer!.clipAction(clip);
+            action.setLoop(THREE.LoopPingPong, Infinity);
+            action.play();
+        });
+    }
 
-    base.roofLeft.visible = !(state.roofVariant === "None");
+    base.roofLeft.visible  = !(state.roofVariant === "None");
     base.roofRight.visible = !(state.roofVariant === "None");
-    base.roofBack.visible = !(state.roofVariant === "None");
+    base.roofBack.visible  = !(state.roofVariant === "None");
     Object.keys(pricing.roofs).forEach(name => {
         const mesh = gltf.scene.getObjectByName(name) as THREE.Mesh;
         if (mesh) {
             roofRegistry[name] = mesh;
-            mesh.children[0].material = globalRoofMaterial;
+            (mesh.children[0] as THREE.Mesh).material = globalRoofMaterial;
             mesh.visible = (name === state.roofVariant);
         }
     });
@@ -393,8 +475,10 @@ gltfLoader.load("/model.glb", (gltf) => {
     dynamicFurniture.push(cabinet);
 
     updateFurnitureAnchors();
+
+    changePipeMaterial();
+    changeDoorMaterial();
     scene.add(gltf.scene);
-    applyColorToDoor(state.doorModel, palette[state.doorFinish]);
 
     if (loaderScreen) {
         gsap.to(loaderScreen, {
@@ -425,12 +509,6 @@ gltfLoader.load("/model.glb", (gltf) => {
     }
 );
 
-function applyColorToDoor(doorName: string, hexValue: string) {
-    if (!doorRegistry[doorName]) return;
-    const mesh = doorRegistry[doorName].getObjectByName(`${doorName}_1`) as THREE.Mesh;
-    if (!mesh) return;
-    (mesh.material as THREE.MeshStandardMaterial).color.set(hexValue);
-}
 
 // --- DOM UI Logic ---
 const lightingToggle = document.getElementById('lighting-toggle');
@@ -525,7 +603,6 @@ function updateUI() {
             Object.keys(doorRegistry).forEach(name => {
                 if (doorRegistry[name]) doorRegistry[name].visible = (name === doorName);
             });
-            applyColorToDoor(state.doorModel, palette[state.doorFinish]);
             updateStateAndCost();
             updateUI();
         });
@@ -538,14 +615,14 @@ function updateUI() {
     Object.entries(pricing.finishes).forEach(([finishName, cost]) => {
         const btn = createOptionButton(finishName, cost, state.doorFinish === finishName, () => {
             state.doorFinish = finishName;
-            applyColorToDoor(state.doorModel, palette[finishName]);
+            changeDoorMaterial();
             updateStateAndCost();
             updateUI();
         });
 
         const swatch = document.createElement('div');
         swatch.className = 'w-4 h-4 rounded-full mt-2 border border-white/20 shadow-sm';
-        swatch.style.backgroundColor = palette[finishName];
+        swatch.style.backgroundColor = Materials[finishName].color.getStyle();
         btn.appendChild(swatch);
 
         finishContainer.appendChild(btn);
@@ -597,23 +674,23 @@ function updateUI() {
     }
 
     // Render Pipe Materials
-    const pipeMaterialContainer = document.getElementById('pipe-material-options');
-    if (pipeMaterialContainer) {
-        pipeMaterialContainer.innerHTML = '';
-        Object.entries(pricing.pipeMaterials).forEach(([matName, cost]) => {
-            const btn = createOptionButton(matName, cost, state.pipeMaterial === matName, () => {
+    const pipeFinishContainer = document.getElementById('pipe-material-options');
+    if (pipeFinishContainer) {
+        pipeFinishContainer.innerHTML = '';
+        Object.entries(pricing.pipeFinishes).forEach(([matName, cost]) => {
+            const btn = createOptionButton(matName, cost, state.pipeFinish === matName, () => {
 
                 // 1. Update State
-                state.pipeMaterial = matName;
+                state.pipeFinish = matName;
 
                 // 2. Apply the material changes
-                applyPipeMaterial(matName);
+                changePipeMaterial();
 
                 // 3. Update Pricing and UI
                 updateStateAndCost();
                 updateUI();
             });
-            pipeMaterialContainer.appendChild(btn);
+            pipeFinishContainer.appendChild(btn);
         });
     }
 
@@ -716,27 +793,18 @@ function updateFurnitureAnchors() {
 
 } 
 
-
 // Sliders Logic
 const max_width = 1.0;
 document.getElementById('width-slider')?.addEventListener('input', (e) => {
     updateFurnitureAnchors();
     state.width = parseFloat((e.target as HTMLInputElement).value);
     const addedWidth = state.width * max_width;
-
     base.leftWall.position.x = -addedWidth;
-    base.rightWall.position.x = addedWidth;
-
-    const backScale = 1.0 + (addedWidth / 2); 
-    base.backWall.scale.x = backScale;
-
-    const frontRightScale = 1.0 + addedWidth * 1.8;
-    base.frontRightWall.scale.x = frontRightScale;
-    const frontLeftScale = 1.0 + addedWidth * 1.65;
-    base.frontLeftWall.scale.x = frontLeftScale;
-
-    base.floor.scale.x = 1.0 + addedWidth/2.4;
-
+    base.rightWall.position.x = addedWidth - 0.05; // A slight error in the model!
+    base.floor.scale.x = 1.0 + addedWidth/2 + 0.025;
+    base.backWall.scale.x = 1.0 + addedWidth/2 + 0.020;
+    base.frontRightWall.scale.x = 1.0 + addedWidth*1.8;
+    base.frontLeftWall.scale.x = 1.0 + addedWidth*1.7;
     base.roofRight.scale.x = 1.0 + addedWidth*20;
     base.roofLeft.scale.x = -1.0 - addedWidth*20;
     base.roofBack.scale.x = 1.0 + addedWidth/2.35;
@@ -751,14 +819,9 @@ document.getElementById('depth-slider')?.addEventListener('input', (e) => {
     state.depth = parseFloat((e.target as HTMLInputElement).value);
     const addedDepth = state.depth * max_depth;
     base.backWall.position.z = -addedDepth; 
-
-    const sideScale = 1.0 + (addedDepth/3.95); 
-
-    base.leftWall.scale.z = sideScale;
-    base.rightWall.scale.z = sideScale;
-
-    base.floor.scale.z = 1.0 + addedDepth/4.0;
-
+    base.leftWall.scale.z = 1.0 + addedDepth*0.252;
+    base.rightWall.scale.z = 1.0 + addedDepth*0.252;
+    base.floor.scale.z = 1.0 + addedDepth/3.5;
     base.roofBack.scale.z = -1.0 + -addedDepth*20;
 
     // Update Pricing UI
@@ -781,48 +844,6 @@ document.getElementById('elevation-slider')?.addEventListener('input', (e) => {
     updateSunPosition();
 });
 
-function applyPipeMaterial(materialName: string) {
-    if (!base.pipeLeft && !base.pipeRight) return;
-
-    // Define the visual properties for your pipe materials
-    const pipeMaterialProps: Record<string, { color: string, metalness: number, roughness: number }> = {
-        'Black PVC': { 
-            color: '#222222', 
-            metalness: 0.0,   
-            roughness: 0.35   
-        },
-        'Zinc': { 
-            color: '#a0a4a8', 
-            metalness: 1.0,   
-            roughness: 0.45   
-        },
-        'White Plastic': { 
-            color: '#ececec', 
-            metalness: 0.0,   
-            roughness: 0.3    
-        }
-    };
-
-    const props = pipeMaterialProps[materialName];
-    if (!props) return;
-
-    [base.pipeLeft, base.pipeRight].forEach(pipe => {
-        if (pipe && pipe.isMesh) {
-            // Ensure we clone the material so we don't accidentally tint other objects
-            if (!pipe.userData.hasClonedMaterial) {
-                pipe.material = (pipe.material as THREE.Material).clone();
-                pipe.userData.hasClonedMaterial = true;
-            }
-
-            const mat = pipe.material as THREE.MeshStandardMaterial;
-            mat.color.set(props.color);
-            mat.metalness = props.metalness;
-            mat.roughness = props.roughness;
-            mat.needsUpdate = true;
-        }
-    });
-}
-
 function updateStateAndCost() {
     const dimCost = ((state.width || 0) * pricing.dimensions.widthMax) + ((state.depth || 0) * pricing.dimensions.depthMax);
     const matCost = pricing.materials[state.material as keyof typeof pricing.materials] || 0;
@@ -830,7 +851,7 @@ function updateStateAndCost() {
     const finishCost = pricing.finishes[state.doorFinish as keyof typeof pricing.finishes] || 0;
     const roofCost = pricing.roofs[state.roofVariant as keyof typeof pricing.roofs] || 0;
     const pipeLayoutCost = pricing.pipeLayout ? (pricing.pipeLayout[state.pipeLayout as keyof typeof pricing.pipeLayout] || 0) : 0;
-    const pipeMatCost = pricing.pipeMaterials ? (pricing.pipeMaterials[state.pipeMaterial as keyof typeof pricing.pipeMaterials] || 0) : 0; 
+    const pipeMatCost = pricing.pipeFinishes ? (pricing.pipeFinishes[state.pipeFinish as keyof typeof pricing.pipeFinishes] || 0) : 0; 
     const newTotal = pricing.base + dimCost + matCost + doorCost + finishCost + roofCost + pipeLayoutCost + pipeMatCost;
     const priceElement = document.getElementById('total-price');
     gsap.to(state, {
