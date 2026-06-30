@@ -8,6 +8,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import gsap from "gsap";
 
 // HDRI
@@ -16,45 +17,40 @@ import germanTownUrl from './assets/hdri/german_town_street_1k.hdr';
 import docklandsUrl from './assets/hdri/docklands_02_1k.hdr';
 import parkUrl from './assets/hdri/charolettenbrunn_park_1k.hdr';
 
-// Cladding
-import claddingDiff from './assets/material/exterior_wall_cladding_02_diff_2k.jpg';
-import claddingNorm from './assets/material/exterior_wall_cladding_02_nor_gl_2k.jpg';
-import claddingRough from './assets/material/exterior_wall_cladding_02_arm_2k.jpg';
-
 // Red Brick
-import redBrickDiff from './assets/material/red_brick_03_diff_2k.jpg';
-import redBrickNorm from './assets/material/red_brick_03_nor_gl_2k.jpg';
-import redBrickRough from './assets/material/red_brick_03_arm_2k.jpg';
+import redBrickDiff from './assets/material/ktx2/red_brick_03_diff_2k.ktx2';
+import redBrickNorm from './assets/material/ktx2/red_brick_03_nor_gl_2k.ktx2';
+import redBrickRough from './assets/material/ktx2/red_brick_03_arm_2k.ktx2';
 
 // Red Brick 02
-import redBrick02Diff from './assets/material/red_brick_diff_2k.jpg';
-import redBrick02Norm from './assets/material/red_brick_nor_gl_2k.jpg';
-import redBrick02Rough from './assets/material/red_brick_arm_2k.jpg';
+import redBrick02Diff from './assets/material/ktx2/red_brick_diff_2k.ktx2';
+import redBrick02Norm from './assets/material/ktx2/red_brick_nor_gl_2k.ktx2';
+import redBrick02Rough from './assets/material/ktx2/red_brick_arm_2k.ktx2';
 
 // White Sand Stone
-import sandstoneDiff from './assets/material/white_sandstone_bricks_03_diff_2k.jpg';
-import sandstoneNorm from './assets/material/white_sandstone_bricks_03_nor_gl_2k.jpg';
-import sandstoneRough from './assets/material/white_sandstone_bricks_03_arm_2k.jpg';
+import sandstoneDiff from './assets/material/ktx2/white_sandstone_bricks_03_diff_2k.ktx2';
+import sandstoneNorm from './assets/material/ktx2/white_sandstone_bricks_03_nor_gl_2k.ktx2';
+import sandstoneRough from './assets/material/ktx2/white_sandstone_bricks_03_arm_2k.ktx2';
 
 // Wood Planks
-import woodDiff from './assets/material/wood_planks_diff_2k.jpg';
-import woodNorm from './assets/material/wood_planks_nor_gl_2k.jpg';
-import woodRough from './assets/material/wood_planks_arm_2k.jpg';
+import woodDiff from './assets/material/ktx2/wood_planks_diff_2k.ktx2';
+import woodNorm from './assets/material/ktx2/wood_planks_nor_gl_2k.ktx2';
+import woodRough from './assets/material/ktx2/wood_planks_arm_2k.ktx2';
 
 // Black Bricks
-import blackBrickDiff from './assets/material/bricks06_basecolor.jpg';
-import blackBrickNorm from './assets/material/bricks06_normal_opengl.jpg';
-import blackBrickRough from './assets/material/bricks06_roughness.jpg';
+import blackBrickDiff from './assets/material/ktx2/bricks06_basecolor.ktx2';
+import blackBrickNorm from './assets/material/ktx2/bricks06_normal_opengl.ktx2';
+import blackBrickRough from './assets/material/ktx2/bricks06_roughness.ktx2';
 
 // Black Metal
-import blackMetalDiff from './assets/material/Metal028_1K-JPG_Color.jpg';
-import blackMetalNorm from './assets/material/Metal028_1K-JPG_NormalGL.jpg';
-import blackMetalRough from './assets/material/Metal028_1K-JPG_Roughness.jpg';
+import blackMetalDiff from './assets/material/ktx2/Metal028_1K-JPG_Color.ktx2';
+import blackMetalNorm from './assets/material/ktx2/Metal028_1K-JPG_NormalGL.ktx2';
+import blackMetalRough from './assets/material/ktx2/Metal028_1K-JPG_Roughness.ktx2';
 
 // Marble Tiles
-import marbleDiff from './assets/material/Marble tiles 1_BaseColor.jpg';
-import marbleNorm from './assets/material/Marble tiles 1_Normal.jpg';
-import marbleRough from './assets/material/Marble tiles 1_Roughness.jpg';
+import marbleDiff from './assets/material/ktx2/Marble tiles 1_BaseColor.ktx2';
+import marbleNorm from './assets/material/ktx2/Marble tiles 1_Normal.ktx2';
+import marbleRough from './assets/material/ktx2/Marble tiles 1_Roughness.ktx2';
 
 const pricing = {
     base: 15000,
@@ -65,7 +61,6 @@ const pricing = {
         'Red Brick 02': 850,
         'White Sand Stone': 1200,
         'Wood Planks': 1500,
-        'Cladding': 2000,
     },
     door_variants: {
         'Door_1': 0,
@@ -153,10 +148,19 @@ const composer = new EffectComposer(renderer, renderTarget);
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
 
-const textureLoader = new THREE.TextureLoader();
+const ktx2Loader = new KTX2Loader();
+ktx2Loader
+    .setTranscoderPath('/basis/')
+    .detectSupport(renderer);
 
-const gtaoPass = new GTAOPass(scene, camera, containerWidth, containerHeight);
+const gtaoPass = new GTAOPass(scene, camera, containerWidth/2, containerHeight/2);
 gtaoPass.output = GTAOPass.OUTPUT.Default;
+gtaoPass.updateGtaoMaterial({
+    radius: 0.5,
+    distanceExponent: 1.0, 
+    distanceFallOff: 1.0,
+    thickness: 1.0
+});
 composer.addPass(gtaoPass);
 
 // const ssaoPass = new SSAOPass(scene, camera, containerWidth, containerHeight);
@@ -223,11 +227,6 @@ loadEnvironment(state.hdri);
 
 // MaterialsLibrary ----------------------- 
 const TexturesLibrary: Record<string, any> = {
-    'Cladding': {
-        diffuse:   claddingDiff,
-        normal:    claddingNorm,
-        roughness: claddingRough,
-    },
     'Red Brick': {
         diffuse:   redBrickDiff,
         normal:    redBrickNorm,
@@ -305,13 +304,13 @@ const MaterialsLibrary: Record<string, THREE.MeshStandardMaterial> = {
 };
 
 const textureCache: Record<string, THREE.Texture> = {};
-function getTexture(path: string, isColorMap: boolean = false): THREE.Texture
-{
+
+async function getTexture(path: string, isColorMap: boolean = false): Promise<THREE.Texture> {
     if (textureCache[path]) {
         return textureCache[path];
     }
-
-    const tex = textureLoader.load(path);
+    const tex = await ktx2Loader.loadAsync(path);
+    
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
     tex.colorSpace = isColorMap ? THREE.SRGBColorSpace : THREE.NoColorSpace;
@@ -320,16 +319,22 @@ function getTexture(path: string, isColorMap: boolean = false): THREE.Texture
     return tex;
 }
 
-function getMaterialForOption(materialKey: string): THREE.MeshStandardMaterial
-{
+async function getMaterialForOption(materialKey: string): Promise<THREE.MeshStandardMaterial> {
     const matData = TexturesLibrary[materialKey];
+
+    const [diffuseMap, normalMap, roughnessMap] = await Promise.all([
+        getTexture(matData.diffuse, true),
+        getTexture(matData.normal),
+        getTexture(matData.roughness)
+    ]);
+
     const mat = new THREE.MeshStandardMaterial({
-        map: getTexture(matData.diffuse, true),
-        normalMap: getTexture(matData.normal),
-        roughnessMap: getTexture(matData.roughness),
-        // aoMap: getTexture(matData.arm),
+        map: diffuseMap,
+        normalMap: normalMap,
+        roughnessMap: roughnessMap,
         color: 0xffffff
     });
+
     applyWorldSpaceUVs(mat, 0.5);
     return mat;
 }
@@ -339,9 +344,11 @@ function getMaterialForOption(materialKey: string): THREE.MeshStandardMaterial
 let door_mat: THREE.MeshStandardMaterial;
 let pipe_mat: THREE.MeshStandardMaterial;
 
-let exterior_mat = getMaterialForOption(state.exterior_finish);
-const roof_mat = getMaterialForOption('Black Metal');
-const floor_mat = getMaterialForOption('Marble Tiles');
+const [exterior_mat, roof_mat, floor_mat] = await Promise.all([
+    getMaterialForOption(state.exterior_finish),
+    getMaterialForOption('Black Metal'),
+    getMaterialForOption('Marble Tiles')
+]);
 
 function changeDoorMaterial()
 {
@@ -608,9 +615,10 @@ function updateUI() {
     materialContainer.innerHTML = '';
 
     Object.entries(pricing.exterior_finishes).forEach(([finish, cost]) => {
-        const btn = createOptionButton(finish, cost, state.exterior_finish === finish, () => {
+        const btn = createOptionButton(finish, cost, state.exterior_finish === finish, async () => {
             state.exterior_finish = finish;
-            exterior_mat.copy(getMaterialForOption(finish));
+            const new_finish = await getMaterialForOption(finish);
+            exterior_mat.copy(new_finish);
             updateStateAndCost();
             updateUI();
         });
