@@ -456,8 +456,6 @@ gltfLoader.load("/model-opt.glb", (gltf) => {
     cabinet.userData.visibleDepth = 0.8;
     dynamicFurniture.push(cabinet);
 
-    updateFurnitureAnchors();
-
     changePipeMaterial();
     changeDoorMaterial();
     scene.add(gltf.scene);
@@ -729,13 +727,14 @@ worldSpaceUv *= uTextureScale;
 }
 
 function updateFurnitureAnchors() {
-
     dynamicFurniture.forEach(item => {
         if (item.userData.visibleDepth) {
             item.visible = state.depth > item.userData.visibleDepth;
         } else if (item.userData.visibleWidth) {
             item.visible = state.width > item.userData.visibleWidth;
-        } else if (item.userData.anchorX === 'LeftWall') {
+        }
+
+        if (item.userData.anchorX === 'LeftWall') {
             item.position.x = base.leftWall.position.x + item.userData.offsetX;
         } else if (item.userData.anchorX === 'RightWall') {
             item.position.x = base.rightWall.position.x + item.userData.offsetX;
@@ -749,13 +748,11 @@ function updateFurnitureAnchors() {
             item.position.z = base.backWall.position.z + item.userData.offsetZ;
         }
     });
-
-} 
+}
 
 // Sliders Logic
 const max_width = 1.0;
 document.getElementById('width-slider')?.addEventListener('input', (e) => {
-    updateFurnitureAnchors();
     state.width = parseFloat((e.target as HTMLInputElement).value);
     const addedWidth = state.width * max_width;
     base.leftWall.position.x = -addedWidth;
@@ -774,7 +771,6 @@ document.getElementById('width-slider')?.addEventListener('input', (e) => {
 const max_depth = 1.0;
 
 document.getElementById('depth-slider')?.addEventListener('input', (e) => {
-    updateFurnitureAnchors();
     state.depth = parseFloat((e.target as HTMLInputElement).value);
     const addedDepth = state.depth * max_depth;
     base.backWall.position.z = -addedDepth; 
@@ -844,6 +840,7 @@ window.addEventListener('resize', () => {
 const timer = new THREE.Timer();
 function animate() {
     timer.update();
+    updateFurnitureAnchors();
     const delta = timer.getDelta();
     if (mixer && state.isPlaying) {
         mixer.update(delta);
