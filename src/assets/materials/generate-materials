@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+# Convert JPG textures to KTX2 and generate an vite import file.
+# author: high-haseeb
+
+target_file="${1:-./materials.js}"
+cat << EOF > $target_file
+// THIS FILE IS GENERATED AUTOMATICALLY - DO NOT MODIFY
+// Generated on: $(date +'%Y-%m-%d %H:%M:%S')
+
+EOF
+
+mats_dirs=$(ls -d */ | grep ^mat-*)
+declare -a mats
+for mat_dir in ${mats_dirs[@]}; do
+    mat_name=${mat_dir#mat-}
+    mat_name=${mat_name%/*}
+    mats+=("$mat_name")
+    printf "// %s\n" "$mat_name" >> $target_file
+    files=$(find ${mat_dir} -maxdepth 1 -type f)
+    mkdir -p ${mat_dir}ktx2
+    for file in ${files[@]}; do
+        file_type=${file%.*}
+        file_type=${file_type#*/}
+        case $file_type in
+            diff|norm|rough)
+                flags="-ktx2 -quality 75 -effort 10"
+                [ "$file_type" == "norm" ] && flags="-ktx2 -normal_map"
+                [ "$file_type" == "rough" ] && flags="-ktx2 -linear"
+
+                target="${mat_dir}ktx2/${file_type}.ktx2"
+
+                if [ ! -f "$target" ]; then
+                    echo "Generating: $target..."
+                    basisu $flags "$file" -output_path "${mat_dir}ktx2/" >/dev/null 2>&1
+
+            if [ $? -eq 0 ]; then
+                echo "Successfully generated $target"
+            else
+                echo "Error: File generation failed for $target"
+            fi
+                fi
+                ;;
+            *)
+                echo ">> Unknown map type ${file_type}. Supported: 'diff', 'norm', 'rough'"
+                ;;
+        esac
+        printf 'import %s_%s from "./assets/materials/%sktx2/%s.ktx2";\n' "$mat_name" "$file_type" "$mat_dir" "$file_type" >> $target_file
+    done
+    printf '\n' >> $target_file
+done
+
+printf "export const TexturesLibrary: Record<string, { diff: string; norm: string; rough: string }> = {\n" >> $target_file
+for mat in ${mats[@]}; do
+    printf "    '%s': {\n" "${mat//_/ }" >> $target_file
+    printf "        diff: %s_diff,\n" "$mat" >> $target_file
+    printf "        norm: %s_norm,\n" "$mat" >> $target_file
+    printf "        rough: %s_rough,\n" "$mat" >> $target_file
+    printf "    },\n" >> $target_file
+done
+printf "};\n" >> $target_file

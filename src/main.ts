@@ -11,56 +11,22 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import gsap from "gsap";
 
+import { TexturesLibrary } from "./textures";
+
 // HDRI
 import cobblestoneUrl from './assets/hdri/cobblestone_parish_road_1k.hdr';
 import germanTownUrl from './assets/hdri/german_town_street_1k.hdr';
 import docklandsUrl from './assets/hdri/docklands_02_1k.hdr';
 import parkUrl from './assets/hdri/charolettenbrunn_park_1k.hdr';
 
-// Red Brick
-import redBrickDiff from './assets/material/ktx2/red_brick_03_diff_2k.ktx2';
-import redBrickNorm from './assets/material/ktx2/red_brick_03_nor_gl_2k.ktx2';
-import redBrickRough from './assets/material/ktx2/red_brick_03_arm_2k.ktx2';
-
-// Red Brick 02
-import redBrick02Diff from './assets/material/ktx2/red_brick_diff_2k.ktx2';
-import redBrick02Norm from './assets/material/ktx2/red_brick_nor_gl_2k.ktx2';
-import redBrick02Rough from './assets/material/ktx2/red_brick_arm_2k.ktx2';
-
-// White Sand Stone
-import sandstoneDiff from './assets/material/ktx2/white_sandstone_bricks_03_diff_2k.ktx2';
-import sandstoneNorm from './assets/material/ktx2/white_sandstone_bricks_03_nor_gl_2k.ktx2';
-import sandstoneRough from './assets/material/ktx2/white_sandstone_bricks_03_arm_2k.ktx2';
-
-// Wood Planks
-import woodDiff from './assets/material/ktx2/wood_planks_diff_2k.ktx2';
-import woodNorm from './assets/material/ktx2/wood_planks_nor_gl_2k.ktx2';
-import woodRough from './assets/material/ktx2/wood_planks_arm_2k.ktx2';
-
-// Black Bricks
-import blackBrickDiff from './assets/material/ktx2/bricks06_basecolor.ktx2';
-import blackBrickNorm from './assets/material/ktx2/bricks06_normal_opengl.ktx2';
-import blackBrickRough from './assets/material/ktx2/bricks06_roughness.ktx2';
-
-// Black Metal
-import blackMetalDiff from './assets/material/ktx2/Metal028_1K-JPG_Color.ktx2';
-import blackMetalNorm from './assets/material/ktx2/Metal028_1K-JPG_NormalGL.ktx2';
-import blackMetalRough from './assets/material/ktx2/Metal028_1K-JPG_Roughness.ktx2';
-
-// Marble Tiles
-import marbleDiff from './assets/material/ktx2/Marble tiles 1_BaseColor.ktx2';
-import marbleNorm from './assets/material/ktx2/Marble tiles 1_Normal.ktx2';
-import marbleRough from './assets/material/ktx2/Marble tiles 1_Roughness.ktx2';
-
 const pricing = {
     base: 15000,
     dimensions: { widthMax: 2500, depthMax: 3000 },
     exterior_finishes: {
-        'Black Bricks': 0,
-        'Red Brick': 800,
-        'Red Brick 02': 850,
-        'White Sand Stone': 1200,
-        'Wood Planks': 1500,
+        'black bricks':    0,
+        'red bricks':       800,
+        'white sandstone': 1200,
+        'wood planks':     1500,
     },
     door_variants: {
         'Door_1': 0,
@@ -107,7 +73,7 @@ const state = {
     isPlaying: true,
     current_total: pricing.base,
 
-    exterior_finish: 'Black Bricks',
+    exterior_finish: 'black bricks',
     door_finish: 'White',
     pipe_finish: 'Zinc',
     door_variant: 'Door_1',
@@ -226,44 +192,6 @@ loadEnvironment(state.hdri);
 // ----------------------- 
 
 // MaterialsLibrary ----------------------- 
-const TexturesLibrary: Record<string, any> = {
-    'Red Brick': {
-        diffuse:   redBrickDiff,
-        normal:    redBrickNorm,
-        roughness: redBrickRough,
-    },
-    'Red Brick 02': {
-        diffuse:   redBrick02Diff,
-        normal:    redBrick02Norm,
-        roughness: redBrick02Rough,
-    },
-    'White Sand Stone': {
-        diffuse:   sandstoneDiff,
-        normal:    sandstoneNorm,
-        roughness: sandstoneRough,
-    },
-    'Wood Planks': {
-        diffuse:   woodDiff,
-        normal:    woodNorm,
-        roughness: woodRough,
-    },
-    'Black Bricks': {
-        diffuse:   blackBrickDiff,
-        normal:    blackBrickNorm,
-        roughness: blackBrickRough,
-    },
-    'Black Metal': {
-        diffuse:   blackMetalDiff,
-        normal:    blackMetalNorm,
-        roughness: blackMetalRough,
-    },
-    'Marble Tiles': {
-        diffuse:   marbleDiff,
-        normal:    marbleNorm,
-        roughness: marbleRough,
-    }
-};
-
 const MaterialsLibrary: Record<string, THREE.MeshStandardMaterial> = {
     'Anthracite': new THREE.MeshStandardMaterial({
         color: '#383E42',
@@ -323,9 +251,9 @@ async function getMaterialForOption(materialKey: string): Promise<THREE.MeshStan
     const matData = TexturesLibrary[materialKey];
 
     const [diffuseMap, normalMap, roughnessMap] = await Promise.all([
-        getTexture(matData.diffuse, true),
-        getTexture(matData.normal),
-        getTexture(matData.roughness)
+        getTexture(matData.diff, true),
+        getTexture(matData.norm),
+        getTexture(matData.rough)
     ]);
 
     const mat = new THREE.MeshStandardMaterial({
@@ -346,8 +274,8 @@ let pipe_mat: THREE.MeshStandardMaterial;
 
 const [exterior_mat, roof_mat, floor_mat] = await Promise.all([
     getMaterialForOption(state.exterior_finish),
-    getMaterialForOption('Black Metal'),
-    getMaterialForOption('Marble Tiles')
+    getMaterialForOption('black metal'),
+    getMaterialForOption('marble tiles')
 ]);
 
 function changeDoorMaterial()
