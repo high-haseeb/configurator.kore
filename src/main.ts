@@ -247,7 +247,7 @@ async function getTexture(path: string, isColorMap: boolean = false): Promise<TH
     return tex;
 }
 
-async function getMaterialForOption(materialKey: string): Promise<THREE.MeshStandardMaterial> {
+async function getMaterialForOption(materialKey: string, repeat: number = 0.5): Promise<THREE.MeshStandardMaterial> {
     const matData = TexturesLibrary[materialKey];
 
     const [diffuseMap, normalMap, roughnessMap] = await Promise.all([
@@ -263,7 +263,7 @@ async function getMaterialForOption(materialKey: string): Promise<THREE.MeshStan
         color: 0xffffff
     });
 
-    applyWorldSpaceUVs(mat, 0.5);
+    applyWorldSpaceUVs(mat, repeat);
     return mat;
 }
 
@@ -275,7 +275,7 @@ let pipe_mat: THREE.MeshStandardMaterial;
 const [exterior_mat, roof_mat, floor_mat] = await Promise.all([
     getMaterialForOption(state.exterior_finish),
     getMaterialForOption('black metal'),
-    getMaterialForOption('marble tiles')
+    getMaterialForOption('marble tiles', 0.2)
 ]);
 
 function changeDoorMaterial()
@@ -368,6 +368,14 @@ gltfLoader.load("/model-opt.glb", (gltf) => {
     base.pipeLeft       = gltf.scene.getObjectByName("PipeLeft") as THREE.Mesh;
     base.pipeRight      = gltf.scene.getObjectByName("PipeRight") as THREE.Mesh;
     pipe_mat = base.pipeLeft.material as THREE.MeshStandardMaterial;
+    
+    base.pipeLeft.userData.anchorX = 'LeftWall';
+    base.pipeLeft.userData.offsetX = base.pipeLeft.position.x - base.leftWall.position.x;
+    dynamicFurniture.push(base.pipeLeft);
+    base.pipeRight.userData.anchorX = 'RightWall';
+    base.pipeRight.userData.offsetX = base.pipeRight.position.x - base.leftWall.position.x;
+    dynamicFurniture.push(base.pipeRight);
+
 
     base.roofRight.material = roof_mat;
     base.roofLeft.material  = roof_mat;
@@ -545,6 +553,10 @@ function updateUI() {
     Object.entries(pricing.exterior_finishes).forEach(([finish, cost]) => {
         const btn = createOptionButton(finish, cost, state.exterior_finish === finish, async () => {
             state.exterior_finish = finish;
+            // if (finish == "white sandstone") exterior_mat.userData.customUniforms.uTextureScale.value = 1.6;
+            // if (finish == "black bricks") exterior_mat.userData.customUniforms.uTextureScale.value = 0.5;
+            // if (finish == "red bricks") exterior_mat.userData.customUniforms.uTextureScale.value = 1.2;
+            // if (finish == "wood planks") exterior_mat.userData.customUniforms.uTextureScale.value = 0.6;
             const new_finish = await getMaterialForOption(finish);
             exterior_mat.copy(new_finish);
             updateStateAndCost();
@@ -657,9 +669,13 @@ function updateUI() {
     }
 }
 
-function applyWorldSpaceUVs(material: THREE.MeshStandardMaterial, textureScale: number) {
+function applyWorldSpaceUVs(material: THREE.MeshStandardMaterial, initialScale: number) {
+    material.userData.customUniforms = {
+        uTextureScale: { value: initialScale }
+    };
+
     material.onBeforeCompile = (shader) => {
-        // 1. Vertex Shader: Pass World Position and World Normal
+        shader.uniforms.uTextureScale = material.userData.customUniforms.uTextureScale;
         shader.vertexShader = shader.vertexShader.replace(
             '#include <common>',
             `#include <common>
@@ -673,38 +689,33 @@ vAbsoluteWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
 vWorldNormalTriplanar = normalize((modelMatrix * vec4(normal, 0.0)).xyz);`
         );
 
-        // 2. Fragment Shader: Receive varyings
+        // 3. Fragment Shader: Declare the uniform and receive varyings
         shader.fragmentShader = shader.fragmentShader.replace(
             '#include <common>',
             `#include <common>
+uniform float uTextureScale; // <--- Declared here
 varying vec3 vAbsoluteWorldPos;
 varying vec3 vWorldNormalTriplanar;`
         );
 
-        // 3. Fragment Shader: 3-Axis Projection Logic
+        // 4. Fragment Shader: 3-Axis Projection Logic
         shader.fragmentShader = shader.fragmentShader.replace(
             'void main() {',
             `void main() {
 vec3 absNormal = abs(vWorldNormalTriplanar);
 vec2 worldSpaceUv;
 
-// Determine which way the face is pointing to assign the correct grid axes
 if (absNormal.y >= absNormal.x && absNormal.y >= absNormal.z) {
-// Face points UP or DOWN (Top/Bottom edges) -> Use X and Z grid
-worldSpaceUv = vec2(vAbsoluteWorldPos.x, vAbsoluteWorldPos.z);
-
+    worldSpaceUv = vec2(vAbsoluteWorldPos.x, vAbsoluteWorldPos.z);
 } else if (absNormal.x >= absNormal.z) {
-// Face points LEFT or RIGHT -> Use Z and Y grid
-worldSpaceUv = vec2(vAbsoluteWorldPos.z, vAbsoluteWorldPos.y);
-
+    worldSpaceUv = vec2(vAbsoluteWorldPos.z, vAbsoluteWorldPos.y);
 } else {
-// Face points FORWARD or BACKWARD -> Use X and Y grid
-worldSpaceUv = vec2(vAbsoluteWorldPos.x, vAbsoluteWorldPos.y);
+    worldSpaceUv = vec2(vAbsoluteWorldPos.x, vAbsoluteWorldPos.y);
 }
 
-worldSpaceUv *= ${textureScale.toFixed(5)};
+// Multiply by the uniform variable instead of a hardcoded string
+worldSpaceUv *= uTextureScale; 
 
-// Overwrite the read-only varyings
 #define vUv worldSpaceUv
 #define vMapUv worldSpaceUv
 #define vNormalMapUv worldSpaceUv
@@ -714,8 +725,7 @@ worldSpaceUv *= ${textureScale.toFixed(5)};
 `
         );
     };
-
-    material.customProgramCacheKey = () => textureScale.toString(); 
+    material.customProgramCacheKey = () => 'world_space_triplanar_uvs'; 
 }
 
 function updateFurnitureAnchors() {
